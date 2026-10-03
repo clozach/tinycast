@@ -207,7 +207,7 @@ struct FlowLayout: Layout {
         var rowHeight: CGFloat = 0
         var total = CGSize(width: 0, height: 0)
         for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
+            let size = fitted(subview, width: width)
             if rowWidth > 0, rowWidth + spacing + size.width > width {
                 total.width = max(total.width, rowWidth)
                 total.height += rowHeight + spacing
@@ -230,7 +230,7 @@ struct FlowLayout: Layout {
         var y = bounds.minY
         var rowHeight: CGFloat = 0
         for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
+            let size = fitted(subview, width: bounds.width)
             if x > bounds.minX, x + size.width > bounds.maxX {
                 x = bounds.minX
                 y += rowHeight + spacing
@@ -240,6 +240,13 @@ struct FlowLayout: Layout {
             x += size.width + spacing
             rowHeight = max(rowHeight, size.height)
         }
+    }
+
+    /// A tag wider than the pane wraps inside it; measured unbounded, it pushed the pane aside.
+    private func fitted(_ subview: LayoutSubview, width: CGFloat) -> CGSize {
+        let ideal = subview.sizeThatFits(.unspecified)
+        guard ideal.width > width, width.isFinite else { return ideal }
+        return subview.sizeThatFits(ProposedViewSize(width: width, height: nil))
     }
 }
 
