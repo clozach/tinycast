@@ -223,8 +223,22 @@ struct ExtensionIconTests {
         return rep
     }
 
+    /// A picker of glyphs passes "." or "/" as a tile's content; neither names a file.
+    static func lonePunctuationIsAGlyph() {
+        let assets = "/tmp/assets"
+        for glyph in [".", "/", "~", "..", ".\u{2008}."] {
+            let source = ExtensionImage.resolve(.string(glyph), assetsPath: assets, isDark: true)?.source
+            expect(source == .glyph(glyph), "\(glyph) draws as a glyph: \(String(describing: source))")
+        }
+        let asset = ExtensionImage.resolve(.string("icon.png"), assetsPath: assets, isDark: true)
+        expect(asset?.source == .file("/tmp/assets/icon.png"), "a named asset still resolves")
+        let path = ExtensionImage.resolve(.string("/tmp/x.png"), assetsPath: assets, isDark: true)
+        expect(path?.source == .file("/tmp/x.png"), "an absolute path still resolves")
+    }
+
     static func main() async {
         artworkIsNormalized()
+        lonePunctuationIsAGlyph()
         missingFileFallsBack()
         await inlineDataURLsDecode()
         await paletteColorsInSVGResolve()

@@ -37,6 +37,13 @@ struct ExtensionScreen: Equatable {
         }
     }
 
+    /// A heading and the items under it; an untitled leading run has no heading.
+    struct ItemSection: Equatable, Identifiable {
+        let id: String
+        let title: String?
+        var items: [Item]
+    }
+
     let kind: Kind
     let root: RenderNode?
     let rows: [Row]
@@ -74,6 +81,22 @@ struct ExtensionScreen: Equatable {
         }
         // An empty section is drawn but holds nothing to land on, so it isn't a row of the grid.
         return counts.filter { $0 > 0 }
+    }
+
+    /// Items under their headings: a grid starts each section on a fresh row, as it navigates.
+    var sections: [ItemSection] {
+        var sections: [ItemSection] = []
+        for row in rows {
+            switch row {
+            case .header(let title, let subtitle, _):
+                let heading = [title, subtitle ?? ""].filter { !$0.isEmpty }.joined(separator: "  ·  ")
+                sections.append(ItemSection(id: row.id, title: heading.isEmpty ? nil : heading, items: []))
+            case .item(let item):
+                if sections.isEmpty { sections.append(ItemSection(id: "leading", title: nil, items: [])) }
+                sections[sections.count - 1].items.append(item)
+            }
+        }
+        return sections
     }
 
     static let empty = ExtensionScreen(

@@ -114,11 +114,12 @@ enum ExtensionImage {
             if scheme.hasPrefix("http") { return .remote(url) }
             if scheme == "data" { return .inline(url) }
         }
-        if text.hasPrefix("/") || text.hasPrefix("~") {
+        // A lone "/" or "~" names a directory, never an image, so a picker can draw the glyph.
+        if text.count > 1, text.hasPrefix("/") || text.hasPrefix("~") {
             return .file((text as NSString).expandingTildeInPath)
         }
-        // A bare name is an asset relative to the extension's `assets/` directory.
-        if let assetsPath, text.contains(".") {
+        // A bare name is an asset relative to `assets/`; a lone "." has no extension to be one.
+        if let assetsPath, !(text as NSString).pathExtension.isEmpty {
             return .file((assetsPath as NSString).appendingPathComponent(text))
         }
         // Anything else short enough to be an emoji or a couple of initials is drawn as a glyph.

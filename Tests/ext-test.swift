@@ -712,6 +712,26 @@ struct ExtensionTests {
                         columns: 3, aspectRatio: 16.0 / 9, fills: true, inset: .large)),
             String(describing: shaped.kind))
 
+        let sectioned = ExtensionScreen(
+            tree: tree(
+                """
+                {"id":2,"type":"Grid","props":{"columns":4},"children":[
+                  {"id":3,"type":"Grid.Item","props":{},"children":[]},
+                  {"id":4,"type":"Grid.Section","props":{"title":"Dashes","subtitle":"7"},"children":[
+                    {"id":5,"type":"Grid.Item","props":{},"children":[]},
+                    {"id":6,"type":"Grid.Item","props":{},"children":[]}]},
+                  {"id":7,"type":"Grid.Section","props":{},"children":[
+                    {"id":8,"type":"Grid.Item","props":{},"children":[]}]}]}
+                """), query: "")
+        check(
+            "a grid draws the sections it navigates by",
+            sectioned.sections.map { $0.items.count } == sectioned.sectionCounts,
+            String(describing: sectioned.sections.map { $0.items.count }))
+        check(
+            "a section heading joins its title and subtitle; untitled runs have none",
+            sectioned.sections.map { $0.title } == [nil, "Dashes  ·  7", nil],
+            String(describing: sectioned.sections.map { $0.title }))
+
         let legacy = ExtensionScreen(
             tree: tree(#"{"id":2,"type":"Grid","props":{"itemSize":"small"},"children":[]}"#),
             query: "")

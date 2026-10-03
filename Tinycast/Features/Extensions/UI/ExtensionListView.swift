@@ -124,18 +124,27 @@ struct ExtensionListView: View {
                         count: layout.columns),
                     spacing: metrics.spacing.sm
                 ) {
-                    ForEach(screen.items) { item in
-                        ExtensionGridCell(
-                            node: item.node, selected: item.index == selection,
-                            assetsPath: assetsPath, layout: layout, width: tileWidth
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            onSelect(item.index)
-                            onActivate(item.index)
+                    let sections = screen.sections
+                    ForEach(sections) { section in
+                        Section {
+                            ForEach(section.items) { item in
+                                ExtensionGridCell(
+                                    node: item.node, selected: item.index == selection,
+                                    assetsPath: assetsPath, layout: layout, width: tileWidth
+                                )
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    onSelect(item.index)
+                                    onActivate(item.index)
+                                }
+                                .onRightClick { onActions(item.index) }
+                                .selectionFrame(item.index == selection)
+                            }
+                        } header: {
+                            if let title = section.title {
+                                SectionHeader(title: title, isFirst: section.id == sections.first?.id)
+                            }
                         }
-                        .onRightClick { onActions(item.index) }
-                        .selectionFrame(item.index == selection)
                     }
                 }
                 .padding(.horizontal, metrics.spacing.md)
@@ -147,7 +156,9 @@ struct ExtensionListView: View {
             .edgeDissolve()
             .thinScrollbar()
             .scrollFollowsSelection(
-                scroll, row: selectedRowID, atOrigin: selection < layout.columns, proxy: proxy)
+                scroll, row: selectedRowID,
+                atOrigin: selection < min(layout.columns, screen.sectionCounts.first ?? 0),
+                proxy: proxy)
         }
     }
 
@@ -311,6 +322,9 @@ private struct ExtensionGridCell: View {
 
     private var content: RenderValue? { node.props["content"] }
 
+    /// `content` may be `{value, tooltip}`; Raycast shows the tooltip on hover.
+    private var tooltip: String { content?.objectValue?["tooltip"]?.stringValue ?? "" }
+
     /// A tile may be a bare `{color}` swatch instead, which has no image to resolve.
     private var swatch: Color? {
         guard let fields = content?.objectValue else { return nil }
@@ -345,6 +359,7 @@ private struct ExtensionGridCell: View {
             }
         }
         .frame(width: width)
+        .help(tooltip)
         .armedHover($hovered)
     }
 

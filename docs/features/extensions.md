@@ -267,8 +267,11 @@ screens hold (see [palette.md](palette.md)).
   grid (GIFs, logos) look as it does in Raycast; `inset` is the extension's own knob for pulling small
   artwork back in, so **never compensate for a too-large tile by clamping the content**. The grid is
   measured once for every cell — a tile that measured itself would cost a layout pass each. A symbol or
-  glyph has no artwork to scale, so it takes a share of the tile; `Grid.Section` props are not read,
-  since the grid draws one column count throughout.
+  glyph has no artwork to scale, so it takes a share of the tile. A `Grid.Section` draws its title
+  (and subtitle) as a heading and starts a fresh row, which is the layout `ExtensionGridGeometry`
+  already navigates by — drawn as one continuous run, ↑/↓ landed on the wrong tile after every
+  heading. Its own `columns`, `aspectRatio` and `inset` are not read, since the grid draws one column
+  count throughout. A tile's `{value, tooltip}` shows the tooltip on hover.
   A tile may be a bare `{color}` swatch instead of an image, stated in any notation `ColorValue`
   reads — a colour picker writes `oklch()`, not hex.
 - **Detail** — markdown rendered block-by-block (headings, lists, code fences, quotes, rules, tables, fetched
@@ -283,7 +286,9 @@ screens hold (see [palette.md](palette.md)).
   reaches it on the next launch. A `{light, dark}` icon or colour is picked by
   `ExtensionImage.resolve(_:assetsPath:isDark:)`, whose `isDark` comes from the view's
   `\.isDarkAppearance` so the pick re-renders when the surface flips; either side stands in when an
-  extension supplies only one. `{fileIcon: path}` is its own source: the path names a bundle or
+  extension supplies only one. A string is a path only when it is longer than a lone `/` or `~`,
+  and an asset only when it has an extension, so a glyph picker's `.`, `/` and `~` tiles draw as
+  glyphs. `{fileIcon: path}` is its own source: the path names a bundle or
   document whose Finder icon is wanted, so it goes to `NSWorkspace` rather than being decoded as an
   image file — an `.app` has no bitmap to read. A `data:` URL is a source of its own too: an extension
   that renders its own SVG hands over the bytes, so they are decoded inline rather than fetched. A
