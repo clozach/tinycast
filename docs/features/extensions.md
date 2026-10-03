@@ -253,7 +253,8 @@ screens hold (see [palette.md](palette.md)).
   path and no second key handler exists to disagree with it. `PaletteFilterAction` routes ⌘P, so a
   command's own dropdown answers before Tinycast's clipboard filter can. The list is
   `listWidth` (240) rather than a form picker's 360: it hangs off a chip, not a field.
-  Its native search field sits above the choices and uses the palette menu's fuzzy matcher.
+  Its native search field sits above the choices and uses the palette menu's fuzzy matcher. Rows
+  keep one exact height, so a title too long for the list shows whole in a hover tooltip.
   **Swift owns the selection** — the runtime keeps `makeSearchDropdown` hook-free so an extension may
   call `List.Dropdown({…})` directly — so `ExtensionManager.accessoryValues` keys it by render-node id
   and `seedSearchBarAccessory` reports the opening choice through `onChange` on the first commit, as

@@ -126,5 +126,7 @@ struct ExtensionPickerRow: View {
             )
         }
         .buttonStyle(.plain)
+        // Rows are one exact height, so a title too long for the list is read whole on hover.
+        .help(title)
     }
 }
