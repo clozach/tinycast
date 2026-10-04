@@ -52,6 +52,8 @@ struct ContactsTests {
         expect(ContactSearch.rank(cards, query: "5551234").map(\.id) == ["ada"], "digits find a formatted number")
         expect(ContactSearch.rank(cards, query: "51").isEmpty, "two digits are too few to strip a number to its digits")
         expect(ContactSearch.rank(cards, query: "lvlc").isEmpty, "a loose subsequence matches nothing")
+        expect(ContactSearch.rank(cards, query: "123 eng").isEmpty, "letters in a query stop it reading as a number")
+        expect(ContactSearch.rank(cards, query: "(415) 555").map(\.id) == ["ada"], "a number typed with punctuation dials")
 
         let named = [wave, chris, obrien]
         expect(ContactSearch.rank(named, query: "lozach").map(\.id) == ["chris", "wave"],

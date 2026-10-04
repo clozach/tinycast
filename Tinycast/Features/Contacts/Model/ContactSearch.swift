@@ -18,7 +18,7 @@ enum ContactSearch {
         let typed = query.trimmingCharacters(in: .whitespaces)
         guard !typed.isEmpty else { return fields }
         let needle = FuzzyMatch.Query(typed)
-        let digits = typed.filter(\.isNumber)
+        let digits = dialed(typed)
         return fields.filter {
             hit(needle, $0.value) != nil || hit(needle, $0.label) != nil
                 || ($0.kind == .phone && matchesDigits(digits, in: $0.value))
@@ -38,7 +38,7 @@ enum ContactSearch {
         init(_ text: String) {
             typed = FuzzyMatch.Query(text)
             bare = FuzzyMatch.Query(ContactSearch.withoutApostrophes(text))
-            digits = text.filter(\.isNumber)
+            digits = ContactSearch.dialed(text)
         }
     }
 
@@ -64,6 +64,12 @@ enum ContactSearch {
     private static func hit(_ needle: FuzzyMatch.Query, _ text: String) -> Int? {
         guard !text.isEmpty, let match = FuzzyMatch.match(needle, candidate: text) else { return nil }
         return match.tier == .subsequence ? nil : match.score
+    }
+
+    /// A query that reads as a number, as its digits; `955 dre` is a name, so it dials nothing.
+    private static func dialed(_ text: String) -> String {
+        let punctuation: Set<Character> = [" ", "+", "-", "(", ")", "."]
+        return text.allSatisfy { $0.isNumber || punctuation.contains($0) } ? text.filter(\.isNumber) : ""
     }
 
     /// `5551234` finds (555) 123-4; three digits, so a stray number in a name stays a name.
