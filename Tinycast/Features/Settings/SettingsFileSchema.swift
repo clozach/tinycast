@@ -96,6 +96,7 @@ enum SettingsFileSchema {
         case .clipboardDisabledApps: return bind(settings, \.clipboardDisabledApps)
         case .emojiSkinTone: return bind(settings, \.emojiSkinTone)
         case .emojiGridColumns: return bind(settings, \.emojiGridColumns)
+        case .emojiInSearchResults: return bind(settings, \.emojiInSearchResults)
         case .calendarShowInLauncher: return bind(settings, \.calendarShowInLauncher)
         case .calendarLauncherLimit: return bind(settings, \.calendarLauncherLimit)
         case .calendarSpan: return bind(settings, \.calendarSpan)

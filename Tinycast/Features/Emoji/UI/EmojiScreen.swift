@@ -187,29 +187,12 @@ enum EmojiActionsMenu {
         -> PopoverMenuContent
     {
         let noun = entry.category.itemTitle
-        var items = [
-            PopoverMenuItem(
-                title: target?.pasteTitle ?? "Paste",
-                icon: .paste(target, fallback: "doc.on.clipboard"), shortcut: "↵"
-            ) {
-                core.emojiCoordinator.pasteEmoji(entry)
-            },
-            PopoverMenuItem(
-                title: "Copy to Clipboard", systemImage: "doc.on.doc", shortcut: "⌘↵"
-            ) {
-                core.emojiCoordinator.copyEmoji(entry)
-            },
-            PopoverMenuItem(
-                title: "Paste and Keep Window Open",
-                icon: .paste(target, fallback: "macwindow"), shortcut: "⌥↵"
-            ) {
-                core.emojiCoordinator.pasteEmojiKeepingWindowOpen(entry)
-            },
+        var items = deliveryItems(entry: entry, core: core, target: target)
+        items.append(
             PopoverMenuItem(
                 title: pinPosition == nil ? "Pin \(noun)" : "Unpin \(noun)",
                 systemImage: pinPosition == nil ? "pin" : "pin.slash",
-                startsSection: true, shortcut: "⌘.", action: togglePin)
-        ]
+                startsSection: true, shortcut: "⌘.", action: togglePin))
         if let pinPosition {
             items.append(
                 PopoverMenuItem(
@@ -237,5 +220,30 @@ enum EmojiActionsMenu {
             ) { zoom(.zoomOut) }
         ])
         return PopoverMenuContent(header: entry.displayName, items: items)
+    }
+
+    /// Where an emoji goes — the same three wherever one is offered, picker or root search.
+    static func deliveryItems(
+        entry: EmojiEntry, core: AppCore, target: PasteTarget?
+    ) -> [PopoverMenuItem] {
+        [
+            PopoverMenuItem(
+                title: target?.pasteTitle ?? "Paste",
+                icon: .paste(target, fallback: "doc.on.clipboard"), shortcut: "↵"
+            ) {
+                core.emojiCoordinator.pasteEmoji(entry)
+            },
+            PopoverMenuItem(
+                title: "Copy to Clipboard", systemImage: "doc.on.doc", shortcut: "⌘↵"
+            ) {
+                core.emojiCoordinator.copyEmoji(entry)
+            },
+            PopoverMenuItem(
+                title: "Paste and Keep Window Open",
+                icon: .paste(target, fallback: "macwindow"), shortcut: "⌥↵"
+            ) {
+                core.emojiCoordinator.pasteEmojiKeepingWindowOpen(entry)
+            }
+        ]
     }
 }

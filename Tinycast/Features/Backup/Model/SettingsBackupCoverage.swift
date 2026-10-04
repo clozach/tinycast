@@ -14,6 +14,7 @@ enum SettingsBackupCoverage {
         "showInMenuBar": .showInMenuBar,
         "emojiSkinTone": .emojiSkinTone,
         "emojiGridColumns": .emojiGridColumns,
+        "emojiInSearchResults": .emojiInSearchResults,
         "popToRootSeconds": .popToRootTimeout,
         "escapeKeyBehavior": .escapeKeyBehavior,
         "appearance": .appearance,

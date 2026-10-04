@@ -31,6 +31,14 @@ struct EmojiSettingsView: View {
             } header: {
                 SettingsSectionHeader(.emojiAppearance)
             }
+
+            Section {
+                Toggle(isOn: $settings.emojiInSearchResults) {
+                    SettingsRowTitle(.emojiSearch, "Show Emoji in Search Results")
+                }
+            } header: {
+                SettingsSectionHeader(.emojiSearch)
+            }
         }
         .formStyle(.grouped)
         .settingsScrollTarget(.emoji)

@@ -20,6 +20,8 @@ struct LauncherList: View {
     let onActivate: (AppEntry) -> Void
     let onActions: (AppEntry) -> Void
     let onDropped: () -> Void
+    /// A few emoji the query names, above the fallbacks; nil when there are none.
+    var emoji: EmojiSection?
     /// The `Use "…" with` section, always last; nil when nothing is typed.
     var fallbacks: FallbackSection?
     @Environment(RunningAppsMonitor.self) private var runningApps
@@ -31,6 +33,13 @@ struct LauncherList: View {
         let onActivate: (Int) -> Void
         let onActions: (Int) -> Void
         let onConfigure: () -> Void
+    }
+
+    /// Emoji rows, addressed by position like the fallbacks.
+    struct EmojiSection {
+        let entries: [EmojiEntry]
+        let onActivate: (Int) -> Void
+        let onActions: (Int) -> Void
     }
 
     /// Calc answers a typed query and the card an empty one, so only one ever leads.
@@ -64,6 +73,7 @@ struct LauncherList: View {
         /// `slot` is the row's ⌘-digit, carried from the section build rather than searched.
         case app(AppEntry, slot: Character?)
         case fallback(AppEntry, index: Int)
+        case emoji(EmojiEntry, index: Int)
         var id: String {
             switch self {
             case .header(let title): return "header-" + title
@@ -71,6 +81,7 @@ struct LauncherList: View {
             case .card(let card): return card.rowID
             case .app(let app, _): return app.id
             case .fallback(let app, _): return "fallback-" + app.id
+            case .emoji(let entry, _): return "emoji-" + entry.glyph
             }
         }
     }
@@ -78,6 +89,12 @@ struct LauncherList: View {
     /// Whether the selection sits on flat index 0: the card, else the first result.
     private var firstRowSelected: Bool {
         card != nil ? cardSelected : selectedRowID != nil && selectedRowID == results.first?.id
+    }
+
+    /// Every row the emoji section contributes, between the results and the fallbacks.
+    private var emojiRows: [Row] {
+        guard let emoji else { return [] }
+        return [.header("Emoji")] + emoji.entries.enumerated().map { Row.emoji($1, index: $0) }
     }
 
     /// Every row the fallback section contributes, always after the results.
@@ -91,9 +108,9 @@ struct LauncherList: View {
         var cardRows: [Row] = []
         if let card { cardRows = [.header(card.sectionTitle), .card(card)] }
         guard showSections else {
-            guard !results.isEmpty else { return cardRows + fallbackRows }
+            guard !results.isEmpty else { return cardRows + emojiRows + fallbackRows }
             return cardRows + [.header("Results")] + results.map { .app($0, slot: nil) }
-                + fallbackRows
+                + emojiRows + fallbackRows
         }
         var rows: [Row] = cardRows
         let favorites = results.prefix(favoriteCount)
@@ -133,13 +150,13 @@ struct LauncherList: View {
             grouped.keys.allSatisfy(kinds.contains),
             "kind missing from the launcher's section order: "
                 + grouped.keys.filter { !kinds.contains($0) }.map(\.rawValue).joined(separator: ", "))
-        return rows + fallbackRows
+        return rows + emojiRows + fallbackRows
     }
 
     var body: some View {
         let rows = rows
         return Group {
-            if results.isEmpty && card == nil && fallbacks == nil {
+            if results.isEmpty && card == nil && emoji == nil && fallbacks == nil {
                 EmptyResults(text: "No apps found")
             } else {
                 ScrollViewReader { proxy in
@@ -181,6 +198,12 @@ struct LauncherList: View {
                                     .onTapGesture { fallbacks?.onActivate(index) }
                                     .onRightClick { fallbacks?.onActions(index) }
                                     .selectionFrame(row.id == selectedRowID)
+                                case .emoji(let entry, let index):
+                                    EmojiResultRow(entry: entry, selected: row.id == selectedRowID)
+                                        .contentShape(Rectangle())
+                                        .onTapGesture { emoji?.onActivate(index) }
+                                        .onRightClick { emoji?.onActions(index) }
+                                        .selectionFrame(row.id == selectedRowID)
                                 }
                             }
                         }
@@ -317,6 +340,44 @@ private struct AppRow: View {
                     .font(metrics.typography.rowTrailing)
                     .foregroundStyle(.secondary)
             }
+        }
+        .padding(.horizontal, metrics.spacing.md)
+        .padding(.vertical, metrics.spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: metrics.radius.row, style: .continuous)
+                .fill(fill)
+        )
+        .armedHover($hovered)
+    }
+}
+
+/// An emoji in root search, in the row grammar every result shares: the glyph fills the icon slot.
+private struct EmojiResultRow: View {
+    @Environment(\.metrics) private var metrics
+    let entry: EmojiEntry
+    let selected: Bool
+    @State private var hovered = false
+
+    /// Selection wins over hover when a row is both; otherwise hover shows its fainter layer.
+    private var fill: Color {
+        if selected { return Theme.Colors.selection }
+        if hovered { return Theme.Colors.rowHover }
+        return .clear
+    }
+
+    var body: some View {
+        HStack(spacing: metrics.spacing.lg) {
+            Text(entry.glyph)
+                .font(.system(size: metrics.size.resultRowIcon * 0.8))
+                .frame(width: metrics.size.resultRowIcon, height: metrics.size.resultRowIcon)
+            Text(entry.displayName)
+                .font(metrics.typography.rowTitle)
+                .lineLimit(1)
+                .help(entry.displayName)
+            Spacer()
+            Text(entry.category.itemTitle)
+                .font(metrics.typography.rowTrailing)
+                .foregroundStyle(.secondary)
         }
         .padding(.horizontal, metrics.spacing.md)
         .padding(.vertical, metrics.spacing.sm)

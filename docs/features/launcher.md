@@ -331,6 +331,19 @@ a `selectedRowID` rather than an entry id. Nothing about a fallback row is learn
 revealed: `activate` routes to `FallbackCoordinator.run` instead of `LauncherCoordinator.launch`, and
 `FallbackActionsMenu` offers only running it and opening the pane.
 
+### Emoji results
+
+A typed query of two or more characters adds up to four emoji under an **Emoji** header, between the
+results and the fallbacks: `EmojiIndex.search` with the picker's own frequency boost, memoized as in
+the picker. They are `LauncherScreen.Row.emoji` rows, not `AppEntry`s — an emoji has no kind, pane or
+visibility switch — so ranking, learning and favorites never see them, and an app always leads. One
+letter would match hundreds and trail every app search, hence the minimum; a category name shows its
+sections instead. ↵ pastes into the app the palette came from, ⌘↵ copies, ⌥↵ pastes and keeps the
+palette open, and ⌘K offers the same three through `EmojiActionsMenu.deliveryItems`, which the
+picker's menu shares. **Show Emoji in Search Results** (Settings › Emoji & Symbols ›
+Search, `emojiInSearchResults`, on by default) turns them off; settings backups and `settings.json`
+carry it.
+
 ### User aliases
 
 `AliasStore` (`Launcher/Service/`) keeps one user-chosen alias per entry, keyed by `preferenceKey`

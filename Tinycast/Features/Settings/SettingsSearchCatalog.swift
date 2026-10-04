@@ -497,7 +497,10 @@ enum SettingsSearchCatalog {
             keywords: ["colour", "color", "fitzpatrick", "default"]),
         .init(
             .emojiAppearance, "Column Count",
-            keywords: ["columns", "density", "zoom", "six", "eight", "ten"])
+            keywords: ["columns", "density", "zoom", "six", "eight", "ten"]),
+        .init(
+            .emojiSearch, "Show Emoji in Search Results",
+            keywords: ["launcher", "root", "results", "inline"])
     ]
 
     private static let calendar: [SettingsSearchEntry] = [

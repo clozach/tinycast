@@ -192,6 +192,11 @@ final class AppSettings {
         didSet { defaults.set(emojiGridColumns.rawValue, forKey: Key.emojiGridColumns.rawValue) }
     }
 
+    /// Root search lists a few matching emoji below its results.
+    var emojiInSearchResults: Bool {
+        didSet { defaults.set(emojiInSearchResults, forKey: Key.emojiInSearchResults.rawValue) }
+    }
+
     /// How long a closed palette keeps its state before popping back to the root launcher.
     var popToRootTimeout: PopToRootTimeout {
         didSet { defaults.set(popToRootTimeout.rawValue, forKey: Key.popToRootTimeout.rawValue) }
@@ -610,6 +615,9 @@ final class AppSettings {
         emojiGridColumns =
             EmojiGridColumns(rawValue: defaults.integer(forKey: Key.emojiGridColumns.rawValue))
             ?? .default
+        emojiInSearchResults =
+            defaults.object(forKey: Key.emojiInSearchResults.rawValue) == nil
+            || defaults.bool(forKey: Key.emojiInSearchResults.rawValue)
         popToRootTimeout =
             PopToRootTimeout(rawValue: defaults.integer(forKey: Key.popToRootTimeout.rawValue))
             ?? .immediately

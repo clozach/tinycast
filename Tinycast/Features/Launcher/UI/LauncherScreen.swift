@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The root search: favorites, meetings, suggestions, then one section per kind, led by any card.
+/// The root search: favorites, meetings, suggestions, kind sections and a card; typing adds emoji.
 struct LauncherScreen: PaletteScreen {
     let appIndex: AppIndex
     let favorites: FavoritesStore
@@ -35,6 +35,8 @@ struct LauncherScreen: PaletteScreen {
     private let suggestionCount: Int
     /// The `Use "…" with` section, below every result; empty unless something is typed.
     private let fallbacks: [(fallback: Fallback, entry: AppEntry)]
+    /// A few emoji the query names, between the results and the fallbacks.
+    private let emoji: [EmojiEntry]
     /// Resolved in `init`: the palette indexes this several times per event, so it can't recompute.
     let rows: [Row]
 
@@ -77,7 +79,10 @@ struct LauncherScreen: PaletteScreen {
         // After the calculator: `#FF5733` is never arithmetic, so the two can't both answer.
         let color = calc == nil && pinned == nil ? ColorValue.parse(vm.query) : nil
         let fallbacks = core.fallbackCoordinator.entries(for: vm.query)
-        let entries = results.map(Row.entry) + fallbacks.map { Row.fallback($0.fallback, $0.entry) }
+        let emoji = pinned == nil ? Self.emojiMatches(query: vm.query, core: core) : []
+        let entries =
+            results.map(Row.entry) + emoji.map(Row.emoji)
+            + fallbacks.map { Row.fallback($0.fallback, $0.entry) }
         let pinsFavorites = vm.query.trimmingCharacters(in: .whitespaces).isEmpty
         // At most one of them leads, so the flat index keeps a single-row offset.
         let meeting = pinsFavorites ? meeting : nil
@@ -85,6 +90,7 @@ struct LauncherScreen: PaletteScreen {
         self.results = results
         self.calc = calc
         self.fallbacks = fallbacks
+        self.emoji = emoji
         self.color = color
         self.showSections = pinsFavorites || AppEntry.Kind.named(by: vm.query) != nil
         self.pinsFavorites = pinsFavorites
@@ -110,6 +116,7 @@ struct LauncherScreen: PaletteScreen {
         case entry(AppEntry)
         /// Prefixed, because the same command can also be a ranked hit above its own fallback row.
         case fallback(Fallback, AppEntry)
+        case emoji(EmojiEntry)
 
         var id: String {
             switch self {
@@ -118,8 +125,22 @@ struct LauncherScreen: PaletteScreen {
             case .color: return "color-card"
             case .entry(let app): return app.id
             case .fallback(let fallback, _): return "fallback-" + fallback.id
+            case .emoji(let entry): return "emoji-" + entry.glyph
             }
         }
+    }
+
+    private static let emojiLimit = 4
+    /// One letter names hundreds of emoji, which would then trail every app search.
+    private static let emojiMinimumQuery = 2
+
+    /// None for a category name, which shows its own sections, or with the setting off.
+    private static func emojiMatches(query: String, core: AppCore) -> [EmojiEntry] {
+        let typed = query.trimmingCharacters(in: .whitespaces)
+        guard core.settings.emojiInSearchResults, typed.count >= emojiMinimumQuery,
+            AppEntry.Kind.named(by: query) == nil
+        else { return [] }
+        return core.emojiIndex.search(typed, frequent: core.frequentEmoji, limit: emojiLimit)
     }
 
     /// The pill carries no selection, so the screen applies the clamp the palette applies.
@@ -136,6 +157,7 @@ struct LauncherScreen: PaletteScreen {
             return meeting.link == nil ? "Open in Calendar" : "Join Meeting"
         case .entry(let app): return app.kind.descriptor.openVerb
         case .fallback(let fallback, _): return fallback.openVerb
+        case .emoji: return vm.pasteTarget?.pasteTitle ?? "Paste"
         case nil: return "Open Application"
         }
     }
@@ -206,7 +228,7 @@ struct LauncherScreen: PaletteScreen {
     private func isCardSelected(_ selection: Int) -> Bool {
         switch row(at: selection) {
         case .calc, .meeting, .color: return true
-        case .entry, .fallback, nil: return false
+        case .entry, .fallback, .emoji, nil: return false
         }
     }
 
@@ -244,6 +266,10 @@ struct LauncherScreen: PaletteScreen {
         case .fallback(let fallback, let app):
             return FallbackActionsMenu.content(
                 fallback: fallback, entry: app, query: vm.query, core: core)
+        case .emoji(let entry):
+            return PopoverMenuContent(
+                header: entry.displayName,
+                items: EmojiActionsMenu.deliveryItems(entry: entry, core: core, target: vm.pasteTarget))
         case nil:
             return nil
         }
@@ -261,8 +287,16 @@ struct LauncherScreen: PaletteScreen {
                 app, searchQuery: vm.query, arguments: argumentValues(for: app))
         case .fallback(let fallback, _):
             core.fallbackCoordinator.run(fallback, query: vm.query)
+        case .emoji(let entry): core.emojiCoordinator.pasteEmoji(entry)
         case nil: break
         }
+    }
+
+    /// ⌥↵ — as in the emoji picker, a run of emoji goes over without re-summoning the palette.
+    func pasteKeepingWindowOpen(at selection: Int) -> Bool {
+        guard case .emoji(let entry) = row(at: selection) else { return false }
+        core.emojiCoordinator.pasteEmojiKeepingWindowOpen(entry)
+        return true
     }
 
     /// The card's meeting or a meeting row's; both answer the meeting menu's chords.
@@ -277,6 +311,10 @@ struct LauncherScreen: PaletteScreen {
 
     /// ⌘↵ — a meeting copies its link; otherwise only an entry on disk has somewhere to be revealed.
     func secondary(at selection: Int) -> Bool {
+        if case .emoji(let entry) = row(at: selection) {
+            core.emojiCoordinator.copyEmoji(entry)
+            return true
+        }
         if let meeting = meeting(at: selection) {
             return MeetingActionsMenu.secondary(meeting: meeting, core: core)
         }
@@ -459,9 +497,24 @@ struct LauncherScreen: PaletteScreen {
                 openActions()
             },
             onDropped: { core.paletteCoordinator.dragLanded() },
+            emoji: emojiSection,
             fallbacks: fallbackSection
         )
     }
+
+    private var emojiSection: LauncherList.EmojiSection? {
+        guard !emoji.isEmpty else { return nil }
+        return LauncherList.EmojiSection(
+            entries: emoji,
+            onActivate: { activate(at: emojiRow(at: $0)) },
+            onActions: {
+                vm.selection = emojiRow(at: $0)
+                openActions()
+            })
+    }
+
+    /// Emoji sit directly above the fallbacks, so a click counts back from the end of `rows`.
+    private func emojiRow(at index: Int) -> Int { rows.count - fallbacks.count - emoji.count + index }
 
     /// Nil when nothing is typed, which is the one state the section has no input for.
     private var fallbackSection: LauncherList.FallbackSection? {
