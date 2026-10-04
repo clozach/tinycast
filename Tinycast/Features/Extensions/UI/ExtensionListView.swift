@@ -130,7 +130,8 @@ struct ExtensionListView: View {
                             ForEach(section.items) { item in
                                 ExtensionGridCell(
                                     node: item.node, selected: item.index == selection,
-                                    assetsPath: assetsPath, layout: layout, width: tileWidth
+                                    assetsPath: assetsPath, layout: layout, width: tileWidth,
+                                    onHover: { onSelect(item.index) }
                                 )
                                 .contentShape(Rectangle())
                                 .onTapGesture {
@@ -318,6 +319,8 @@ private struct ExtensionGridCell: View {
     let assetsPath: String?
     let layout: ExtensionGridLayout
     let width: Double
+    /// A tile's title and actions are the selection's, so a pointer that moves onto it selects it.
+    let onHover: () -> Void
     @State private var hovered = false
 
     private var content: RenderValue? { node.props["content"] }
@@ -361,6 +364,7 @@ private struct ExtensionGridCell: View {
         .frame(width: width)
         .help(tooltip)
         .armedHover($hovered)
+        .onChange(of: hovered) { _, now in if now { onHover() } }
     }
 
     private var tile: some View {

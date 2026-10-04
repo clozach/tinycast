@@ -272,7 +272,10 @@ screens hold (see [palette.md](palette.md)).
   (and subtitle) as a heading and starts a fresh row, which is the layout `ExtensionGridGeometry`
   already navigates by — drawn as one continuous run, ↑/↓ landed on the wrong tile after every
   heading. Its own `columns`, `aspectRatio` and `inset` are not read, since the grid draws one column
-  count throughout. A tile's `{value, tooltip}` shows the tooltip on hover.
+  count throughout. A tile's `{value, tooltip}` shows the tooltip on hover. Moving the pointer onto
+  a tile selects it, so the pill's title and ⌘K follow the pointer — gated by the same armed hover as
+  every row, so a tile that slides under a still pointer selects nothing and keys keep the selection
+  until the pointer moves.
   A tile may be a bare `{color}` swatch instead of an image, stated in any notation `ColorValue`
   reads — a colour picker writes `oklch()`, not hex.
 - **Detail** — markdown rendered block-by-block (headings, lists, code fences, quotes, rules, tables, fetched
