@@ -32,6 +32,8 @@ final class ContactsCoordinator {
 
     /// Reopened within the Remember setting, the search holds the last card's name, selected.
     func show(carrying typed: String = "") {
+        // The shortcut over an empty list closes it, as it did before there was anything to recall.
+        if paletteCoordinator.isShowing(.contacts) { return paletteCoordinator.hidePalette() }
         store.prepare()
         // Typed root search is set after this returns, and wins over the recalled name.
         let minutes = core.settings.contactsRecall.rawValue
