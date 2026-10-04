@@ -13,6 +13,14 @@
 writes one `HotKeyBinding`, so the four cases share persistence, conflict detection, the recorder and
 the keycap rendering — only the _engine_ differs.
 
+**A shortcut carries a typed root search.** Fired while the launcher shows with text typed, a
+command's shortcut opens its screen already searching that text: a built-in search screen
+(`PaletteMode.searchesTypedText` — clipboard, emoji, files, menu items, windows, snippets, quicklinks,
+dictionary and the rest) through `LauncherCoordinator.runCommandFromHotKey`, an extension command
+as its `fallbackText` (see [extensions.md](extensions.md#shortcuts)). The screen is pushed, so
+Escape walks back to the root search with the text intact. Launching the same command from the
+list does not carry anything: there the typed text is the command's name.
+
 ## Invariants
 
 - **Hotkeys persist as JSON strings under `hotkey.<action>` UserDefaults keys**, and

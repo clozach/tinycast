@@ -25,6 +25,17 @@ enum PaletteMode: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// A screen whose search field filters what it lists, so a typed root search can carry into it.
+    var searchesTypedText: Bool {
+        switch self {
+        case .clipboard, .calculatorHistory, .emoji, .fileSearch, .menuSearch, .switchWindows,
+            .quicklinks, .snippets, .dictionary, .uninstall, .aiHistory:
+            true
+        case .launcher, .ai, .rooms, .roomWindows, .schedule, .meetingDetails, .extensionCommand:
+            false
+        }
+    }
+
     var systemImage: String {
         switch self {
         case .launcher: return "magnifyingglass"

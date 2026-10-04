@@ -161,6 +161,15 @@ final class LauncherCoordinator {
     }
 
     /// The one funnel a built-in command runs through, from a palette row or its global shortcut.
+    /// A shortcut fired over a root search hands what was typed to the search screen it opens.
+    func runCommandFromHotKey(_ id: CommandID) {
+        let typed = paletteCoordinator.isShowing(.launcher) ? core.palette.query : ""
+        runCommand(id)
+        guard !typed.isEmpty, paletteCoordinator.isVisible, core.palette.mode.searchesTypedText
+        else { return }
+        core.palette.query = typed
+    }
+
     func runCommand(_ id: CommandID) {
         switch id {
         case .quickAI:
