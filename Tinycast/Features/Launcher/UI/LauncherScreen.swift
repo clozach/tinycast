@@ -39,8 +39,6 @@ struct LauncherScreen: PaletteScreen {
     private let emoji: [EmojiEntry]
     /// How many of `results` the emoji follow: the leading run that starts a word with the query.
     private let emojiAfter: Int
-    /// The emoji rows as drawn: each match, and below the one → opened, a row per skin tone.
-    private let emojiRows: [Row]
     /// Resolved in `init`: the palette indexes this several times per event, so it can't recompute.
     let rows: [Row]
 
@@ -88,13 +86,8 @@ struct LauncherScreen: PaletteScreen {
             emoji.isEmpty
             ? results.count
             : results.prefix { Self.startsWord(vm.query, in: $0, aliases: core.aliases) }.count
-        let toneGlyph = vm.emojiTones.flatMap { $0.query == vm.query ? $0.glyph : nil }
-        let emojiRows = emoji.flatMap { entry -> [Row] in
-            guard entry.supportsSkinTone, entry.glyph == toneGlyph else { return [.emoji(entry)] }
-            return [.emoji(entry)] + EmojiSkinTone.allCases.map { .emojiTone(entry, $0) }
-        }
         let entries =
-            results.prefix(emojiAfter).map(Row.entry) + emojiRows
+            results.prefix(emojiAfter).map(Row.entry) + emoji.map(Row.emoji)
             + results.dropFirst(emojiAfter).map(Row.entry)
             + fallbacks.map { Row.fallback($0.fallback, $0.entry) }
         let pinsFavorites = vm.query.trimmingCharacters(in: .whitespaces).isEmpty
@@ -106,7 +99,6 @@ struct LauncherScreen: PaletteScreen {
         self.fallbacks = fallbacks
         self.emoji = emoji
         self.emojiAfter = emojiAfter
-        self.emojiRows = emojiRows
         self.color = color
         self.showSections = pinsFavorites || AppEntry.Kind.named(by: vm.query) != nil
         self.pinsFavorites = pinsFavorites
@@ -133,8 +125,6 @@ struct LauncherScreen: PaletteScreen {
         /// Prefixed, because the same command can also be a ranked hit above its own fallback row.
         case fallback(Fallback, AppEntry)
         case emoji(EmojiEntry)
-        /// One skin tone of an emoji row, listed under it while → holds them open.
-        case emojiTone(EmojiEntry, EmojiSkinTone)
 
         var id: String {
             switch self {
@@ -144,7 +134,6 @@ struct LauncherScreen: PaletteScreen {
             case .entry(let app): return app.id
             case .fallback(let fallback, _): return "fallback-" + fallback.id
             case .emoji(let entry): return "emoji-" + entry.glyph
-            case .emojiTone(let entry, let tone): return "emoji-" + entry.glyph + "-" + tone.rawValue
             }
         }
     }
@@ -187,7 +176,7 @@ struct LauncherScreen: PaletteScreen {
             return meeting.link == nil ? "Open in Calendar" : "Join Meeting"
         case .entry(let app): return app.kind.descriptor.openVerb
         case .fallback(let fallback, _): return fallback.openVerb
-        case .emoji, .emojiTone: return vm.pasteTarget?.pasteTitle ?? "Paste"
+        case .emoji: return vm.pasteTarget?.pasteTitle ?? "Paste"
         case nil: return "Open Application"
         }
     }
@@ -258,7 +247,7 @@ struct LauncherScreen: PaletteScreen {
     private func isCardSelected(_ selection: Int) -> Bool {
         switch row(at: selection) {
         case .calc, .meeting, .color: return true
-        case .entry, .fallback, .emoji, .emojiTone, nil: return false
+        case .entry, .fallback, .emoji, nil: return false
         }
     }
 
@@ -301,10 +290,6 @@ struct LauncherScreen: PaletteScreen {
                 header: entry.displayName,
                 items: EmojiActionsMenu.deliveryItems(entry: entry, core: core, target: vm.pasteTarget)
                     + glyphSearchItem())
-        case .emojiTone(let entry, let tone):
-            return PopoverMenuContent(
-                header: entry.displayName + ", " + Self.toneTitle(tone),
-                items: toneItems(entry, tone) + glyphSearchItem())
         case nil:
             return nil
         }
@@ -323,65 +308,21 @@ struct LauncherScreen: PaletteScreen {
         case .fallback(let fallback, _):
             core.fallbackCoordinator.run(fallback, query: vm.query)
         case .emoji(let entry): core.emojiCoordinator.pasteEmoji(entry)
-        case .emojiTone(let entry, let tone): core.emojiCoordinator.pasteEmoji(entry, tone: tone)
         case nil: break
         }
     }
 
-    static func toneTitle(_ tone: EmojiSkinTone) -> String {
-        tone == .none ? "No Skin Tone" : tone.title + " Skin Tone"
-    }
-
-    /// ↵ pastes this tone once; ⌘↵ also makes it the tone every later emoji paste uses.
-    private func toneItems(_ entry: EmojiEntry, _ tone: EmojiSkinTone) -> [PopoverMenuItem] {
-        let target = vm.pasteTarget
-        return [
-            PopoverMenuItem(
-                title: target?.pasteTitle ?? "Paste",
-                icon: .paste(target, fallback: "doc.on.clipboard"), shortcut: "↵"
-            ) { core.emojiCoordinator.pasteEmoji(entry, tone: tone) },
-            PopoverMenuItem(
-                title: "Paste and Make Default Tone", systemImage: "checkmark.circle", shortcut: "⌘↵"
-            ) { core.emojiCoordinator.pasteEmoji(entry, tone: tone, makeDefault: true) },
-            PopoverMenuItem(title: "Copy to Clipboard", systemImage: "doc.on.doc") {
-                core.emojiCoordinator.copyEmoji(entry, tone: tone)
-            }
-        ]
-    }
-
-    /// Offered only while the glyph picker is installed.
+    /// Offered only while the glyph picker is installed; its hotkey, if bound, opens it the same way.
     private func glyphSearchItem() -> [PopoverMenuItem] {
-        guard core.extensionCoordinator.glyphSearchEntry != nil else { return [] }
+        guard let entry = core.extensionCoordinator.glyphSearchEntry else { return [] }
         let query = vm.query
+        let chord = entry.hotKeyAction.flatMap { core.hotKeys.binding(for: $0)?.keycaps.joined() }
         return [
             PopoverMenuItem(
                 title: "Search in Unimagic", systemImage: "character.magnify", startsSection: true,
-                shortcut: "⌃⌘Space"
+                shortcut: chord
             ) { core.extensionCoordinator.searchGlyphs(query) }
         ]
-    }
-
-    /// → opens an emoji's skin tones under it, or steps into them; ← from a tone closes them.
-    func move(_ delta: Int, axis: PaletteAxis, from selection: Int) -> Int? {
-        guard axis == .horizontal else { return nil }
-        switch row(at: selection) {
-        case .emoji(let entry) where delta > 0 && entry.supportsSkinTone:
-            vm.emojiTones = (vm.query, entry.glyph)
-            return selection + 1
-        case .emojiTone(let entry, _) where delta < 0:
-            vm.emojiTones = nil
-            return rows.firstIndex(of: .emoji(entry))
-        default:
-            return nil
-        }
-    }
-
-    /// Escape closes open tones before it clears the query; nil when none are open.
-    func closeEmojiTones() -> Int? {
-        guard let glyph = vm.emojiTones?.glyph, let entry = emoji.first(where: { $0.glyph == glyph })
-        else { return nil }
-        vm.emojiTones = nil
-        return rows.firstIndex(of: .emoji(entry))
     }
 
     /// ⌥↵ — as in the emoji picker, a run of emoji goes over without re-summoning the palette.
@@ -407,10 +348,6 @@ struct LauncherScreen: PaletteScreen {
             core.emojiCoordinator.copyEmoji(entry)
             return true
         }
-        if case .emojiTone(let entry, let tone) = row(at: selection) {
-            core.emojiCoordinator.pasteEmoji(entry, tone: tone, makeDefault: true)
-            return true
-        }
         if let meeting = meeting(at: selection) {
             return MeetingActionsMenu.secondary(meeting: meeting, core: core)
         }
@@ -434,14 +371,6 @@ struct LauncherScreen: PaletteScreen {
         case .quit, .forceQuit: return quit(at: selection, force: shortcut == .forceQuit)
         case .restart: return restart(at: selection)
         case .favoriteSlot(let index): return launchFavorite(at: index)
-        case .searchGlyphs:
-            switch row(at: selection) {
-            case .emoji, .emojiTone:
-                guard core.extensionCoordinator.glyphSearchEntry != nil else { return false }
-                core.extensionCoordinator.searchGlyphs(vm.query)
-                return true
-            default: return false
-            }
         case .copyCalculation: return copyCalculation(at: selection)
         case .openInApp, .showDetails:
             guard let meeting = meeting(at: selection) else { return false }
@@ -551,7 +480,7 @@ struct LauncherScreen: PaletteScreen {
     }
 
     private func select(row index: Int) {
-        let emojiShift = index < emojiAfter ? 0 : emojiRows.count
+        let emojiShift = index < emojiAfter ? 0 : emoji.count
         vm.selection = index + emojiShift + (leadCard == nil ? 0 : 1)
         scrollToFollow()
     }
@@ -611,19 +540,10 @@ struct LauncherScreen: PaletteScreen {
         guard !emoji.isEmpty else { return nil }
         let tone = core.emojiCoordinator.defaultTone
         return LauncherList.EmojiSection(
-            items: emojiRows.compactMap { row in
-                switch row {
-                case .emoji(let entry):
-                    return .init(
-                        id: row.id, glyph: entry.display(tone: tone), title: entry.displayName,
-                        trailing: entry.category.itemTitle)
-                case .emojiTone(let entry, let rowTone):
-                    return .init(
-                        id: row.id, glyph: entry.display(tone: rowTone),
-                        title: Self.toneTitle(rowTone),
-                        trailing: rowTone == tone ? "✓ Default" : "Skin Tone", indented: true)
-                default: return nil
-                }
+            items: emoji.map { entry in
+                .init(
+                    id: Row.emoji(entry).id, glyph: entry.display(tone: tone),
+                    title: entry.displayName, trailing: entry.category.itemTitle)
             },
             after: emojiAfter,
             onActivate: { activate(at: emojiRow(at: $0)) },
@@ -633,7 +553,7 @@ struct LauncherScreen: PaletteScreen {
             })
     }
 
-    /// Emoji rows follow the card, if any, and the results that start a word with the query.
+    /// Emoji follow the card, if any, and the results that start a word with the query.
     private func emojiRow(at index: Int) -> Int { (leadCard == nil ? 0 : 1) + emojiAfter + index }
 
     /// Nil when nothing is typed, which is the one state the section has no input for.

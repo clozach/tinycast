@@ -37,13 +37,12 @@ struct LauncherList: View {
 
     /// Emoji rows, addressed by position like the fallbacks.
     struct EmojiSection {
-        /// One drawn row: an emoji, or one of its skin tones indented under it.
+        /// One drawn row, its glyph already in the tone a paste would use.
         struct Item {
             let id: String
             let glyph: String
             let title: String
             let trailing: String
-            var indented = false
         }
 
         let items: [Item]
@@ -399,7 +398,6 @@ private struct EmojiResultRow: View {
                 .font(metrics.typography.rowTrailing)
                 .foregroundStyle(.secondary)
         }
-        .padding(.leading, item.indented ? metrics.spacing.xl * 2 : 0)
         .padding(.horizontal, metrics.spacing.md)
         .padding(.vertical, metrics.spacing.sm)
         .background(

@@ -80,7 +80,9 @@ final class ExtensionCoordinator {
             paletteCoordinator.hidePalette()
             return
         }
-        runExtensionCommand(entry)
+        // Over a root search with text typed, the command opens already searching that text.
+        let typed = paletteCoordinator.isShowing(.launcher) && !palette.query.isEmpty ? palette.query : nil
+        runExtensionCommand(entry, fallbackText: typed)
     }
 
     /// An action the open screen binds to the command's own chord takes that second press instead.

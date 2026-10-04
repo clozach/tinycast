@@ -42,8 +42,6 @@ enum PaletteShortcut: Equatable {
     case settings
     /// ⌘J, Quick AI handing its conversation to the AI Chat window.
     case continueInChat
-    /// ⌃⌘Space, a root emoji result handing the query to the fuller glyph search.
-    case searchGlyphs
     /// ⌘., which AppKit binds to `cancelOperation:`, so it arrives as a token instead of a key.
     case pin
     /// ⌘1…⌘0, matched by key code in the panel and handed over as a slot.
@@ -73,7 +71,6 @@ enum PaletteShortcut: Equatable {
         if command, !shift, matches("n") { return .newItem }
         if command, option, matches(",") { return .settings }
         if command, matches("j") { return .continueInChat }
-        if command, control, !shift, !option, matches(" ") { return .searchGlyphs }
         return nil
     }
 
@@ -81,7 +78,7 @@ enum PaletteShortcut: Equatable {
     var requiresExpanded: Bool {
         switch self {
         case .copyFile, .copyName, .copyPath, .copyText, .pasteFile, .quickLook, .openInApp,
-            .showDetails, .toggleFavorite, .hideFromSearch, .quit, .forceQuit, .restart, .searchGlyphs:
+            .showDetails, .toggleFavorite, .hideFromSearch, .quit, .forceQuit, .restart:
             true
         case .commandDelete, .delete, .deleteAll, .pin, .favoriteSlot, .continueInChat, .newItem,
             .settings, .copyCalculation:
@@ -92,8 +89,7 @@ enum PaletteShortcut: Equatable {
     var closesMenu: Bool {
         switch self {
         case .delete, .deleteAll, .copyFile, .copyName, .copyPath, .copyText, .copyCalculation,
-            .quickLook, .openInApp, .showDetails, .toggleFavorite, .hideFromSearch, .newItem, .settings,
-            .searchGlyphs:
+            .quickLook, .openInApp, .showDetails, .toggleFavorite, .hideFromSearch, .newItem, .settings:
             true
         case .commandDelete, .pasteFile, .quit, .forceQuit, .restart, .pin, .favoriteSlot,
             .continueInChat:

@@ -578,7 +578,9 @@ run, and an extension is a set of commands. `HotKeyAction.extensionCommand` is k
 entry id (`extension:<extension>/<command>`).
 
 A view command summons the palette when the shortcut fires while it is hidden, or it would load
-behind a closed window. A no-view command still hides it and reports through its HUD. Pressed again
+behind a closed window. A no-view command still hides it and reports through its HUD. Fired over a
+root search with text typed, the command opens already searching that text — the same
+`fallbackText` a deeplink carries — and Escape walks back to the root search with the text intact. Pressed again
 while its command is showing, the shortcut closes it — unless the selected item has an action whose
 own `shortcut` is that same chord, which then runs instead. A global chord never reaches the
 palette's key handlers, so this is how a command reuses its own hotkey (Unimagic opens its skin-tone

@@ -93,5 +93,5 @@ remove or add one column. Removing the selected item from the leading Pinned sec
 selection on the neighbour that takes its place instead of following the item into the catalog.
 
 Root search also lists up to four matching emoji below its results, from the same index and frequency
-boost, with → for an emoji's skin tones; see [launcher.md](launcher.md#emoji-results). **Show Emoji in
+boost; see [launcher.md](launcher.md#emoji-results). **Show Emoji in
 Search Results** turns that off.
