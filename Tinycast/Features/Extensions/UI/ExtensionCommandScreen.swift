@@ -36,6 +36,10 @@ struct ExtensionCommandScreen: PaletteScreen {
     /// Selectable rows only: a section header is drawn but never landed on, and so is a separator.
     var rows: [ExtensionScreen.Item] { screen.items }
 
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        ExtensionSendTo.payload(in: screen, at: selection)
+    }
+
     /// A form owns the whole keyboard: its fields are the text, so the search field steps aside.
     var hidesSearchField: Bool { isForm }
 

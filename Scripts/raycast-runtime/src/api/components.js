@@ -358,6 +358,7 @@ Action.CopyToClipboard = convenience("Action.CopyToClipboard", (props) => ({
   shortcut: props.shortcut,
   style: props.style,
   autoFocus: props.autoFocus,
+  tinycastSendTo: props.concealed ? undefined : props.content,
   onAction: async () => {
     await effects.copy({ content: props.content, concealed: props.concealed });
     props.onCopy?.(props.content);
@@ -370,6 +371,7 @@ Action.Paste = convenience("Action.Paste", (props) => ({
   shortcut: props.shortcut,
   style: props.style,
   autoFocus: props.autoFocus,
+  tinycastSendTo: props.content,
   onAction: async () => {
     await effects.paste({ content: props.content });
     props.onPaste?.(props.content);
@@ -382,6 +384,7 @@ Action.OpenInBrowser = convenience("Action.OpenInBrowser", (props) => ({
   shortcut: props.shortcut,
   style: props.style,
   autoFocus: props.autoFocus,
+  tinycastSendTo: props.url,
   onAction: async () => {
     await effects.open({ target: props.url, application: props.application });
     props.onOpen?.(props.url);
@@ -394,6 +397,8 @@ Action.Open = convenience("Action.Open", (props) => ({
   shortcut: props.shortcut,
   style: props.style,
   autoFocus: props.autoFocus,
+  tinycastSendTo: String(props.target ?? "").startsWith("/") || String(props.target ?? "").startsWith("file:")
+    ? { file: props.target } : props.target,
   onAction: async () => {
     await effects.open({ target: props.target, application: props.application });
     props.onOpen?.(props.target);
@@ -404,6 +409,7 @@ Action.OpenWith = convenience("Action.OpenWith", (props) => ({
   title: props.title ?? "Open With",
   icon: props.icon ?? Icon.AppWindow,
   shortcut: props.shortcut,
+  tinycastSendTo: { file: props.path },
   onAction: async () => {
     await effects.openWith({ path: props.path });
     props.onOpen?.(props.path);
@@ -414,6 +420,7 @@ Action.ShowInFinder = convenience("Action.ShowInFinder", (props) => ({
   title: props.title ?? "Show in Finder",
   icon: props.icon ?? Icon.Finder,
   shortcut: props.shortcut,
+  tinycastSendTo: { file: props.path },
   onAction: async () => {
     await effects.showInFinder({ path: props.path });
     props.onShow?.(props.path);

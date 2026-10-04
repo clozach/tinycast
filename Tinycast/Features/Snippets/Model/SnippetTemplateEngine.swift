@@ -134,6 +134,15 @@ enum SnippetTemplateEngine {
         return declared
     }
 
+    static func literalText(in text: String) -> String? {
+        var result = ""
+        for segment in parseSegments(text) {
+            guard case .literal(let value) = segment else { return nil }
+            result += value
+        }
+        return result
+    }
+
     /// Whether the template reads the selection. Parsed, so a literal brace run doesn't count.
     static func usesSelection(_ text: String) -> Bool {
         parseSegments(text).contains { segment in

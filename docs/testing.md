@@ -106,6 +106,9 @@ If a change touches anything in the right column, the harness on the left is man
 | `paste-sequence-test` | `Clipboard/Model/PasteSequence.swift` — the walk's order, its end, and what starts it over |
 | `clipboard-test` | `Clipboard/Model/ClipboardStore.swift`, `ClipboardFilter.swift`, `ClipboardFileKind.swift`, the colour trio |
 | `pasteboard-test` | `Clipboard/Service/ClipboardManager.swift` capture and `Paster.write` — what a Finder copy reads as, and what a file entry writes back |
+| `send-to-test` | Target discovery, frozen rich clipboard payloads, file/image handling, exact-app delivery, focus changes and cancellation |
+| `send-to-panel-test` | Native search selection, undo/redo, navigation and IME composition before delivery |
+| `send-to-focus-test` | Deferred chooser dismissal, returning to its source, and stale notification cancellation |
 | `emoji-test` | `Emoji/Model/EmojiCatalog.swift`, `EmojiGridGeometry.swift`, the generated data and keyword packs |
 | `emoji-search-test` | `Emoji/Service/EmojiIndex.swift`, `FrequentEmojiStore.swift`, `Scripts/gen-emoji.js`'s keyword format, multilingual search |
 | `emoji-root-search-test` | Shared app/emoji ranking, KM learning in both directions, aliases, synonyms, colon names, localized keywords, full candidate pool, reset and persistence |

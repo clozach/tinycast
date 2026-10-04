@@ -67,6 +67,7 @@ final class NotesCoordinator {
     }
 
     var hasActiveNote: Bool { store.activeID != nil }
+    var sendToCoordinator: SendToCoordinator { core.sendToCoordinator }
     /// UTF-16 units, straight off the text storage: the only length TextKit hands back in O(1).
     var characterCountLabel: String {
         characterCount == 1 ? "1 character" : "\(characterCount) characters"

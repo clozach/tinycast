@@ -41,6 +41,10 @@ struct ContactsScreen: PaletteScreen {
         core.contactsCoordinator.open(card)
     }
 
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        card(at: selection).map { .text($0.name) }
+    }
+
     func secondary(at selection: Int) -> Bool {
         guard let card = card(at: selection) else { return false }
         core.contactsCoordinator.copyName(of: card)
@@ -129,6 +133,10 @@ struct ContactFieldsScreen: PaletteScreen {
     func activate(at selection: Int) {
         guard let field = field(at: selection) else { return }
         core.contactsCoordinator.run(field)
+    }
+
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        field(at: selection).map { .text($0.value) }
     }
 
     func secondary(at selection: Int) -> Bool {

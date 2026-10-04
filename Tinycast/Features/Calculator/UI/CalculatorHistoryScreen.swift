@@ -55,6 +55,17 @@ struct CalculatorHistoryScreen: PaletteScreen {
         return result.isActionable
     }
 
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        switch row(at: selection) {
+        case .calc(let result):
+            guard case .value(_, let text) = result.payload else { return nil }
+            return .text(format.localized(text))
+        case .entry(let entry):
+            return .text(format.localized(entry.result.replacingOccurrences(of: ",", with: "")))
+        case nil: return nil
+        }
+    }
+
     func actions(at selection: Int) -> PopoverMenuContent? {
         switch row(at: selection) {
         case .calc(let result):

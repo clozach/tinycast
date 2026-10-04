@@ -251,6 +251,47 @@ struct LauncherScreen: PaletteScreen {
         return result.isActionable
     }
 
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        switch row(at: selection) {
+        case .calc(let result):
+            guard case .value(_, let text) = result.payload else { return nil }
+            return .text(core.calcNumberFormat.localized(text))
+        case .color(let color): return .text(ColorFormat.primary(for: color).string(for: color))
+        case .meeting(let meeting): return meeting.link.map { .text($0.webURL.absoluteString) }
+        case .emoji(let entry): return .text(entry.display(tone: core.emojiCoordinator.defaultTone))
+        case .entry(let entry): return sendToPayload(for: entry)
+        case .fallback, nil: return nil
+        }
+    }
+
+    private func sendToPayload(for entry: AppEntry) -> SendToPayload? {
+        switch entry.kind {
+        case .application: return .files([entry.url])
+        case .snippet:
+            guard let id = StoredSnippet.id(fromEntryID: entry.id),
+                let source = core.snippetsStore.record(id: id)?.snippet.text,
+                let text = SnippetTemplateEngine.literalText(in: source)
+            else { return nil }
+            return .text(text)
+        case .quicklink:
+            guard let source = quicklink(for: entry)?.link,
+                let link = SnippetTemplateEngine.literalText(in: source)
+            else { return nil }
+            guard let destination = QuicklinkDestination.detect(link) else { return nil }
+            if case .path(let path) = destination {
+                return .files([URL(fileURLWithPath: path)])
+            }
+            return .text(destination.displayText)
+        case .meeting:
+            return core.calendarCoordinator.meeting(entryID: entry.id)?.link.map {
+                .text($0.webURL.absoluteString)
+            }
+        case .command where CommandCatalog.command(for: entry) == .openInBrowser:
+            return .text(entry.url.absoluteString)
+        default: return nil
+        }
+    }
+
     func actions(at selection: Int) -> PopoverMenuContent? {
         switch row(at: selection) {
         case .calc(let result):

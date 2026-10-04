@@ -111,6 +111,12 @@ fine too; deciding something with one is what the rule forbids. `showNotice`, `c
 
 New long-lived state belongs on `AppCore`, wired in `start()`. Do not create a competing singleton: this is a singleton, not a container.
 
+`SendToCoordinator` owns the app-wide destination chooser and local ⇧⌘S shortcut. Each content window
+registers a weak `SendToSource`; palette screens provide their current item through
+`PaletteScreen.sendToPayload(at:)`. Selected content text takes precedence, then the current item,
+then a labelled frozen clipboard snapshot. Discovery and delivery live in `Features/SendTo/Service`.
+See [Send to](features/send-to.md).
+
 Clipboard text recognition is the one feature that leaves the process. `AppCore` owns the indexer;
 the stateless `ClipboardTextWorker` runs one bundled `ClipboardTextHelper` per item, from
 `Contents/Helpers`, and reaps it before returning. Vision's and PDFKit's allocations therefore belong

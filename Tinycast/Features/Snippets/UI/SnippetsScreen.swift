@@ -27,6 +27,13 @@ struct SnippetsScreen: PaletteScreen {
         return rows.indices.contains(selection) ? rows[selection] : nil
     }
 
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        guard let source = record(at: selection)?.snippet.text,
+            let text = SnippetTemplateEngine.literalText(in: source)
+        else { return nil }
+        return .text(text)
+    }
+
     func actions(at selection: Int) -> PopoverMenuContent? {
         guard let record = record(at: selection) else { return nil }
         return SnippetActionsMenu.content(record: record, core: core)

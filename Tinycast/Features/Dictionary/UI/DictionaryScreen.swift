@@ -16,6 +16,10 @@ struct DictionaryScreen: PaletteScreen {
 
     var primaryActionTitle: String { "Copy Definition" }
 
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        entry.map { .text($0.text) }
+    }
+
     func actions(at selection: Int) -> PopoverMenuContent? {
         guard let entry else { return nil }
         return PopoverMenuContent(

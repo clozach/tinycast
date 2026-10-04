@@ -28,6 +28,10 @@ struct ScheduleScreen: PaletteScreen {
         return rows.indices.contains(selection) ? rows[selection] : nil
     }
 
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        meeting(at: selection)?.link.map { .text($0.webURL.absoluteString) }
+    }
+
     func actions(at selection: Int) -> PopoverMenuContent? {
         guard let meeting = meeting(at: selection) else { return nil }
         return MeetingActionsMenu.content(meeting: meeting, core: core)

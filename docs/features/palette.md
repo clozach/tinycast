@@ -3,6 +3,10 @@
 The command palette is a borderless floating `NSPanel` hosting SwiftUI; see
 [architecture.md](../architecture.md) for window ownership.
 
+The footer's **Send to…** button and **⇧⌘S** open the shared [Send to](send-to.md) chooser.
+It receives the selected result rather than the highlighted search query. Escape or Back restores
+the query and selection; sending to a chosen app dismisses the palette.
+
 ## Invariants
 
 - **`PaletteWindowController` solely owns the palette frame.** The hosting view sets

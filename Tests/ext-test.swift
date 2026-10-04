@@ -197,6 +197,7 @@ struct ExtensionTests {
         deepLinkChecks()
         nodeShimChecks()
         await runtimeChecks()
+        await ExtensionSendToTests.run()
         await searchAccessoryRuntimeChecks()
         await nodeContractChecks()
         await webAssemblyChecks()

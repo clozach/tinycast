@@ -25,6 +25,15 @@ struct ClipboardScreen: PaletteScreen {
         return rows.indices.contains(selection) ? rows[selection] : nil
     }
 
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        guard let item = item(at: selection) else { return nil }
+        switch item.kind {
+        case .text: return item.text.map(SendToPayload.text)
+        case .image: return store.imageURL(for: item).map(SendToPayload.image)
+        case .file: return store.fileURL(for: item).map { .files([$0]) }
+        }
+    }
+
     func actions(at selection: Int) -> PopoverMenuContent? {
         guard let item = item(at: selection) else { return nil }
         return ClipboardActionsMenu.content(

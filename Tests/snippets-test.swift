@@ -21,6 +21,7 @@ struct SnippetsTests {
         await testCopySelectionFallback()
         try await testStoreWatcher()
         testTemplateExpansion()
+        testLiteralTemplateText()
         testDynamicPlaceholders()
         testTemplateEncodingAndSelectionAlias()
         testKeywordPolicy()
@@ -30,6 +31,17 @@ struct SnippetsTests {
 
         print(failures == 0 ? "\nALL PASSED" : "\n\(failures) FAILED")
         exit(failures == 0 ? 0 : 1)
+    }
+
+    private static func testLiteralTemplateText() {
+        for value in ["Hello ✦", "{\"name\":\"Al\"}", "struct { value: 42 }", "{unknown}", "unfinished {"] {
+            check("static template remains literal: \(value)", SnippetTemplateEngine.literalText(in: value) == value)
+        }
+        for value in ["{clipboard}", "{date}", "{uuid}", "{argument}", "{cursor}", "{snippet:Name}",
+            "{\"generated\":\"{date}\"}", "{selection | uppercase}"]
+        {
+            check("dynamic template is not sent unresolved: \(value)", SnippetTemplateEngine.literalText(in: value) == nil)
+        }
     }
 
     private static func testIdentityAndRevision() {

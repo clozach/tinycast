@@ -16,6 +16,10 @@ struct AIScreen: PaletteScreen {
 
     let rows = [Row()]
 
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        chat.lastAssistantText.map(SendToPayload.text)
+    }
+
     /// One footer pill for Return's two jobs: Send, or Stop while a response streams.
     var primaryActionTitle: String { chat.isStreaming ? "Stop" : "Send" }
 

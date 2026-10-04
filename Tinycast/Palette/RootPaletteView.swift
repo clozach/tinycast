@@ -320,6 +320,12 @@ struct RootPaletteView: View {
                         installHeaderArrowHandler(in: $0)
                     }
                 )
+                .background(
+                    SendToSource(coordinator: core.sendToCoordinator, prefersSelectedText: false) {
+                        let payload = isCollapsed ? nil : screen.sendToPayload(at: selection(in: screen))
+                        closeMenus()
+                        return payload
+                    })
                 // The window's frame is the size source, so the glass and clip stay matched.
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .background(Theme.Colors.panelScrim)
@@ -888,6 +894,13 @@ struct RootPaletteView: View {
         HStack(spacing: 0) {
             appMenuButton
                 .modifier(ExtensionToastSlot(extensions: extensions, showing: vm.mode == .extensionCommand))
+            BarButton { core.sendToCoordinator.request() } label: {
+                Text("Send to…")
+                    .font(metrics.typography.bar)
+                    .foregroundStyle(Theme.Colors.textSecondary)
+            }
+            .padding(.leading, metrics.spacing.sm)
+            .tooltip("Send to another app  ⇧⌘S")
             Spacer()
             if showActionGroup {
                 actionGroup(

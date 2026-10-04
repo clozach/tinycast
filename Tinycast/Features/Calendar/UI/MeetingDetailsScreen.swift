@@ -11,6 +11,10 @@ struct MeetingDetailsScreen: PaletteScreen {
 
     var rows: [MeetingEvent] { meeting.map { [$0] } ?? [] }
 
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        meeting?.link.map { .text($0.webURL.absoluteString) }
+    }
+
     var primaryActionTitle: String {
         meeting?.link == nil ? "Open in Calendar" : "Join Meeting"
     }

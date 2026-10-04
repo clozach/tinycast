@@ -101,6 +101,7 @@ final class AppCore {
         palette: palette, settings: settings, appIndex: appIndex,
         fileSearch: fileSearch, menuSearch: menuSearch, windowSwitch: windowSwitch,
         windowController: windowController)
+    @ObservationIgnored private(set) lazy var sendToCoordinator = SendToCoordinator(core: self)
     /// Its own window and lifecycle: neither coordinator shows or closes the other's surface.
     @ObservationIgnored private(set) lazy var settingsCoordinator = SettingsCoordinator(core: self)
     @ObservationIgnored private(set) lazy var onboardingCoordinator = OnboardingCoordinator(
@@ -266,6 +267,7 @@ final class AppCore {
             NSApp.setActivationPolicy(.accessory)
             applyAppearance()
             observeEffectiveAppearance()
+            sendToCoordinator.start()
             pinnedEmoji.onPersistenceFailure = { [weak self] in
                 self?.showMessage("Couldn't save Emoji & Symbols pins", tone: .danger)
             }

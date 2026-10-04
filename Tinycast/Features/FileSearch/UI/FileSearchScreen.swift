@@ -23,6 +23,10 @@ struct FileSearchScreen: PaletteScreen {
         rows.indices.contains(selection) ? rows[selection] : nil
     }
 
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        result(at: selection).map { .files([$0.url]) }
+    }
+
     func actions(at selection: Int) -> PopoverMenuContent? {
         guard let result = result(at: selection) else { return nil }
         return FileSearchActionsMenu.content(

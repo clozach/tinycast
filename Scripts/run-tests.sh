@@ -140,6 +140,11 @@ run app-name-test          Tinycast/Platform/AppDisplayName.swift \
                            $L/SearchRelevance.swift
 run favorites-test         $L/FavoriteSlots.swift
 run apple-shortcut-test    Tinycast/Features/AppleShortcuts/Model/*.swift
+run send-to-panel-test     Tinycast/Platform/WindowLevel.swift \
+                          Tinycast/Features/SendTo/UI/SendToPanel.swift
+run send-to-focus-test     Tinycast/Features/SendTo/UI/SendToController.swift
+run send-to-test           Tinycast/Features/SendTo/Model/*.swift \
+                           Tinycast/Features/SendTo/Service/*.swift
 run calc-test              Tinycast/Features/Calculator/Model/*.swift
 run index calc-performance Tinycast/Features/Calculator/Model/*.swift
 run calendar-test          Tinycast/Features/Calendar/Model/*.swift
@@ -534,6 +539,7 @@ run ext-accessory-test     $E/Model/RenderNode.swift \
                            $E/Model/ExtensionSearchAccessory.swift \
                            $E/Service/ExtensionStorage.swift
 run slow ext-test          -parse-as-library \
+                           Tests/ext-send-to-test.swift \
                            Tests/ext-menu-bar-test.swift \
                            Tests/ext-fetch-test.swift \
                            $E/Model/ExtensionLaunchError.swift \
@@ -573,6 +579,9 @@ run slow ext-test          -parse-as-library \
                            $E/UI/ExtensionAnimatedImage.swift \
                            $E/UI/ExtensionImage.swift \
                            $E/UI/ExtensionScreen.swift \
+                           $E/UI/ExtensionSendTo.swift \
+                           Tinycast/Features/SendTo/Model/SendToPayload.swift \
+                           Tinycast/Features/SendTo/Model/SendToPasteboardSnapshot.swift \
                            $L/SearchRelevance.swift \
                            Tinycast/Platform/Compression/Zlib.swift \
                            Tinycast/Features/Clipboard/Model/ColorValue.swift \

@@ -240,7 +240,7 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
 
     /// Not for a dialog or a modal: hiding tears down a running command.
     func windowDidResignKey(_ notification: Notification) {
-        guard isVisible, !core.isShowingDialog else { return }
+        guard isVisible, !core.isShowingDialog, !core.sendToCoordinator.isPresented else { return }
         if core.palette.menuOpen { return }
         // A file panel sets its own level under ours, so sink rather than dismiss.
         if NSApp.modalWindow != nil {

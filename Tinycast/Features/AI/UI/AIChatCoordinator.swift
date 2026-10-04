@@ -74,7 +74,13 @@ final class AIChatCoordinator {
         window.show(chrome: AIChatWindowChrome(coordinator: self, chats: chats, find: find)) {
             AIChatSplitViewController(
                 sidebar: AIChatSidebarView().environment(self),
-                detail: AIChatDetailView().environment(self).environment(find))
+                detail: AIChatDetailView().environment(self).environment(find)
+                    .background(
+                        SendToSource(coordinator: core.sendToCoordinator, label: "Latest response") { [weak self] in
+                            guard let text = self?.chats.window.lastAssistantText, !text.isEmpty
+                            else { return nil }
+                            return .text(text)
+                        }))
         }
     }
 

@@ -24,6 +24,17 @@ struct QuicklinkListScreen: PaletteScreen {
         return rows.indices.contains(selection) ? rows[selection] : nil
     }
 
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        guard let source = quicklink(at: selection)?.link,
+            let link = SnippetTemplateEngine.literalText(in: source)
+        else { return nil }
+        guard let destination = QuicklinkDestination.detect(link) else { return nil }
+        if case .path(let path) = destination {
+            return .files([URL(fileURLWithPath: path)])
+        }
+        return .text(destination.displayText)
+    }
+
     func actions(at selection: Int) -> PopoverMenuContent? {
         guard let quicklink = quicklink(at: selection) else { return nil }
         return QuicklinkActionsMenu.content(

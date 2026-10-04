@@ -17,6 +17,13 @@ struct ChatHistoryScreen: PaletteScreen {
         return rows.indices.contains(selection) ? rows[selection] : nil
     }
 
+    func sendToPayload(at selection: Int) -> SendToPayload? {
+        guard let conversation = conversation(at: selection),
+            let session = history.session(id: conversation.id)
+        else { return nil }
+        return .text(session.markdownTranscript(title: conversation.displayTitle))
+    }
+
     func actions(at selection: Int) -> PopoverMenuContent? {
         guard let conversation = conversation(at: selection) else { return nil }
         return ChatHistoryActionsMenu.content(

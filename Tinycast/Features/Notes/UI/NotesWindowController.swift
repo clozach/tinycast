@@ -114,6 +114,12 @@ final class NotesWindowController: NSObject, NSWindowDelegate {
     private func ensurePanel() -> NotesPanel {
         if let panel { return panel }
         let root = NotesView().environment(coordinator)
+            .background(
+                SendToSource(coordinator: coordinator.sendToCoordinator, label: "Current note") { [weak coordinator] in
+                    guard let coordinator, coordinator.hasActiveNote, !coordinator.editorInput.source.isEmpty
+                    else { return nil }
+                    return .text(coordinator.editorInput.source)
+                })
         let hosting = NSHostingView(rootView: root)
         hosting.sizingOptions = []
         let panel = NotesPanel(
