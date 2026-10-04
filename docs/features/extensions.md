@@ -437,8 +437,11 @@ screens hold (see [palette.md](palette.md)).
   `NaN` for `undefined`, so omitting a blank argument silently corrupts whatever they compute — Coffee's
   "Caffeinate for…" spawned `caffeinate -t NaN`, which exits instantly.
 
-Escape clears a non-empty search field first, and dispatches `onSearchTextChange` as any other edit
-would, so a command that took the search text over sees the empty string. Only over an empty field do
+Each screen of a command's navigation stack has its own search text, as in Raycast: a push saves the
+field and starts the new screen empty, and a pop puts the saved text back
+(`ExtensionCoordinator.extensionNavigated`). Escape clears a non-empty search field first, and
+dispatches `onSearchTextChange` as any other edit would, so a command that took the search text over
+sees the empty string. Only over an empty field do
 Escape and a bare backspace pop the extension's own navigation stack, and only leave the command once
 it's at its root. Pushed screens stay mounted, so popping back restores their state.
 

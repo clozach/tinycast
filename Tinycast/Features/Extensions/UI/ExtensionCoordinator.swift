@@ -106,6 +106,22 @@ final class ExtensionCoordinator {
         return true
     }
 
+    /// The search text of each screen beneath the one showing, as Raycast keeps one per screen.
+    private var parentQueries: [String] = []
+
+    /// A pushed screen starts with an empty search; popping restores the search it covered.
+    func extensionNavigated(to depth: Int) {
+        let below = max(depth - 1, 0)
+        if below > parentQueries.count {
+            parentQueries.append(palette.query)
+            parentQueries.append(contentsOf: Array(repeating: "", count: below - parentQueries.count))
+            palette.query = ""
+        } else if below < parentQueries.count {
+            palette.query = parentQueries[below]
+            parentQueries.removeSubrange(below...)
+        }
+    }
+
     /// Al's own glyph picker, projects/unimagic in his vault; nil unless that extension is installed.
     var glyphSearchEntry: AppEntry? { extensions.launcherEntry(forEntryID: "extension:unimagic/unimagic") }
 
@@ -213,6 +229,7 @@ final class ExtensionCoordinator {
         fallbackText: String? = nil, launchType: ExtensionLaunchType = .userInitiated,
         launchContext: [String: RenderValue] = [:]
     ) {
+        parentQueries = []
         switch command.mode {
         case .view:
             // Switch the palette over first, so the launching state is what the user sees.
