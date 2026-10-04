@@ -333,10 +333,12 @@ revealed: `activate` routes to `FallbackCoordinator.run` instead of `LauncherCoo
 
 ### Emoji results
 
-A typed query of two or more characters adds up to four emoji under an **Emoji** header, between the
-results and the fallbacks: `EmojiIndex.search` with the picker's own frequency boost, memoized as in
-the picker. They are `LauncherScreen.Row.emoji` rows, not `AppEntry`s — an emoji has no kind, pane or
-visibility switch — so ranking, learning and favorites never see them, and an app always leads. One
+A typed query of two or more characters adds up to four emoji under an **Emoji** header:
+`EmojiIndex.search` with the picker's own frequency boost, memoized as in the picker. They follow the
+leading run of results whose name, subtitle or alias the query hits at a word start or better
+(`FuzzyMatch` tiers exact, prefix, word start); looser fuzzy hits follow them under **More Results**,
+so `heart` shows ❤️ before *Hide All Apps Except Frontmost* while `safari` keeps Safari first. They are `LauncherScreen.Row.emoji` rows, not `AppEntry`s — an emoji has no kind, pane or
+visibility switch — so ranking, learning and favorites never see them. One
 letter would match hundreds and trail every app search, hence the minimum; a category name shows its
 sections instead. ↵ pastes into the app the palette came from, ⌘↵ copies, ⌥↵ pastes and keeps the
 palette open, and ⌘K offers the same three through `EmojiActionsMenu.deliveryItems`, which the

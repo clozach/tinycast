@@ -35,8 +35,10 @@ struct LauncherScreen: PaletteScreen {
     private let suggestionCount: Int
     /// The `Use "…" with` section, below every result; empty unless something is typed.
     private let fallbacks: [(fallback: Fallback, entry: AppEntry)]
-    /// A few emoji the query names, between the results and the fallbacks.
+    /// A few emoji the query names, after the results that start a word with it.
     private let emoji: [EmojiEntry]
+    /// How many of `results` the emoji follow: the leading run that starts a word with the query.
+    private let emojiAfter: Int
     /// Resolved in `init`: the palette indexes this several times per event, so it can't recompute.
     let rows: [Row]
 
@@ -80,8 +82,13 @@ struct LauncherScreen: PaletteScreen {
         let color = calc == nil && pinned == nil ? ColorValue.parse(vm.query) : nil
         let fallbacks = core.fallbackCoordinator.entries(for: vm.query)
         let emoji = pinned == nil ? Self.emojiMatches(query: vm.query, core: core) : []
+        let emojiAfter =
+            emoji.isEmpty
+            ? results.count
+            : results.prefix { Self.startsWord(vm.query, in: $0, aliases: core.aliases) }.count
         let entries =
-            results.map(Row.entry) + emoji.map(Row.emoji)
+            results.prefix(emojiAfter).map(Row.entry) + emoji.map(Row.emoji)
+            + results.dropFirst(emojiAfter).map(Row.entry)
             + fallbacks.map { Row.fallback($0.fallback, $0.entry) }
         let pinsFavorites = vm.query.trimmingCharacters(in: .whitespaces).isEmpty
         // At most one of them leads, so the flat index keeps a single-row offset.
@@ -91,6 +98,7 @@ struct LauncherScreen: PaletteScreen {
         self.calc = calc
         self.fallbacks = fallbacks
         self.emoji = emoji
+        self.emojiAfter = emojiAfter
         self.color = color
         self.showSections = pinsFavorites || AppEntry.Kind.named(by: vm.query) != nil
         self.pinsFavorites = pinsFavorites
@@ -141,6 +149,17 @@ struct LauncherScreen: PaletteScreen {
             AppEntry.Kind.named(by: query) == nil
         else { return [] }
         return core.emojiIndex.search(typed, frequent: core.frequentEmoji, limit: emojiLimit)
+    }
+
+    /// A hit the user plainly typed toward; a looser fuzzy match yields its place to the emoji.
+    private static func startsWord(_ query: String, in app: AppEntry, aliases: AliasStore) -> Bool {
+        let fields = [app.name, app.subtitle, aliases.alias(for: app.preferenceKey)].compactMap { $0 }
+        return fields.contains { field in
+            switch FuzzyMatch.match(query: query, candidate: field)?.tier {
+            case .exact, .prefix, .wordStart: true
+            case .substring, .subsequence, nil: false
+            }
+        }
     }
 
     /// The pill carries no selection, so the screen applies the clamp the palette applies.
@@ -447,7 +466,8 @@ struct LauncherScreen: PaletteScreen {
     }
 
     private func select(row index: Int) {
-        vm.selection = index + (leadCard == nil ? 0 : 1)
+        let emojiShift = index < emojiAfter ? 0 : emoji.count
+        vm.selection = index + emojiShift + (leadCard == nil ? 0 : 1)
         scrollToFollow()
     }
 
@@ -505,7 +525,7 @@ struct LauncherScreen: PaletteScreen {
     private var emojiSection: LauncherList.EmojiSection? {
         guard !emoji.isEmpty else { return nil }
         return LauncherList.EmojiSection(
-            entries: emoji,
+            entries: emoji, after: emojiAfter,
             onActivate: { activate(at: emojiRow(at: $0)) },
             onActions: {
                 vm.selection = emojiRow(at: $0)
@@ -513,8 +533,8 @@ struct LauncherScreen: PaletteScreen {
             })
     }
 
-    /// Emoji sit directly above the fallbacks, so a click counts back from the end of `rows`.
-    private func emojiRow(at index: Int) -> Int { rows.count - fallbacks.count - emoji.count + index }
+    /// Emoji follow the card, if any, and the results that start a word with the query.
+    private func emojiRow(at index: Int) -> Int { (leadCard == nil ? 0 : 1) + emojiAfter + index }
 
     /// Nil when nothing is typed, which is the one state the section has no input for.
     private var fallbackSection: LauncherList.FallbackSection? {

@@ -20,7 +20,7 @@ struct LauncherList: View {
     let onActivate: (AppEntry) -> Void
     let onActions: (AppEntry) -> Void
     let onDropped: () -> Void
-    /// A few emoji the query names, above the fallbacks; nil when there are none.
+    /// A few emoji the query names, inside the results; nil when there are none.
     var emoji: EmojiSection?
     /// The `Use "…" with` section, always last; nil when nothing is typed.
     var fallbacks: FallbackSection?
@@ -38,6 +38,8 @@ struct LauncherList: View {
     /// Emoji rows, addressed by position like the fallbacks.
     struct EmojiSection {
         let entries: [EmojiEntry]
+        /// How many results come before them; the rest follow under More Results.
+        let after: Int
         let onActivate: (Int) -> Void
         let onActions: (Int) -> Void
     }
@@ -86,9 +88,14 @@ struct LauncherList: View {
         }
     }
 
-    /// Whether the selection sits on flat index 0: the card, else the first result.
-    private var firstRowSelected: Bool {
-        card != nil ? cardSelected : selectedRowID != nil && selectedRowID == results.first?.id
+    /// Whether the selection sits on flat index 0: the card, else the first result or emoji.
+    private func firstRowSelected(in rows: [Row]) -> Bool {
+        if card != nil { return cardSelected }
+        let first = rows.first {
+            if case .header = $0 { return false }
+            return true
+        }
+        return selectedRowID != nil && selectedRowID == first?.id
     }
 
     /// Every row the emoji section contributes, between the results and the fallbacks.
@@ -108,9 +115,12 @@ struct LauncherList: View {
         var cardRows: [Row] = []
         if let card { cardRows = [.header(card.sectionTitle), .card(card)] }
         guard showSections else {
-            guard !results.isEmpty else { return cardRows + emojiRows + fallbackRows }
-            return cardRows + [.header("Results")] + results.map { .app($0, slot: nil) }
-                + emojiRows + fallbackRows
+            let after = emoji?.after ?? results.count
+            let leading = results.prefix(after).map { Row.app($0, slot: nil) }
+            let trailing = results.dropFirst(after).map { Row.app($0, slot: nil) }
+            return cardRows + (leading.isEmpty ? [] : [.header("Results")] + leading) + emojiRows
+                + (trailing.isEmpty ? [] : [.header(leading.isEmpty ? "Results" : "More Results")] + trailing)
+                + fallbackRows
         }
         var rows: [Row] = cardRows
         let favorites = results.prefix(favoriteCount)
@@ -217,7 +227,8 @@ struct LauncherList: View {
                     .thinScrollbar()
                     // Snap to the origin on the first row so its header shows too.
                     .scrollFollowsSelection(
-                        scroll, row: selectedRowID, atOrigin: firstRowSelected, proxy: proxy)
+                        scroll, row: selectedRowID, atOrigin: firstRowSelected(in: rows),
+                        proxy: proxy)
                 }
             }
         }
