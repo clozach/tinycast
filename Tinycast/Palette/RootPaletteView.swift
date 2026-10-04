@@ -90,6 +90,10 @@ struct RootPaletteView: View {
                 openActions: openActions)
         case .meetingDetails:
             return MeetingDetailsScreen(store: calendarStore, core: core)
+        case .contacts:
+            return ContactsScreen(store: core.contacts, core: core, vm: vm, openActions: openActions)
+        case .contactFields:
+            return ContactFieldsScreen(store: core.contacts, core: core, vm: vm, openActions: openActions)
         case .clipboard:
             return ClipboardScreen(
                 store: store, core: core, vm: vm, openActions: openActions,

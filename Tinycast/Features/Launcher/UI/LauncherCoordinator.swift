@@ -195,6 +195,8 @@ final class LauncherCoordinator {
             paletteCoordinator.togglePalette(mode: .emoji)
         case .searchFiles:
             fileSearchCoordinator.show()
+        case .searchContacts:
+            core.contactsCoordinator.runShortcut()
         case .searchMenuItems:
             menuSearchCoordinator.show()
         case .switchWindows:

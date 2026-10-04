@@ -44,6 +44,7 @@ final class AppCore {
     let currencyRates = CurrencyRateStore()
     let regionNumberFormat = RegionNumberFormatMonitor()
     let calendarStore = CalendarStore()
+    let contacts = ContactsStore()
     let meetingClock = MeetingClock()
     let updateChecker = UpdateCheckStore()
     let supportReminders: SupportReminderStore
@@ -181,6 +182,8 @@ final class AppCore {
         paletteCoordinator: paletteCoordinator)
     @ObservationIgnored private(set) lazy var calculatorCoordinator = CalculatorCoordinator(
         calcHistory: calcHistory, paletteCoordinator: paletteCoordinator, core: self)
+    @ObservationIgnored private(set) lazy var contactsCoordinator = ContactsCoordinator(
+        store: contacts, palette: palette, paletteCoordinator: paletteCoordinator, core: self)
     @ObservationIgnored private(set) lazy var calendarCoordinator = CalendarCoordinator(
         store: calendarStore, clock: meetingClock, appIndex: appIndex, settings: settings,
         paletteCoordinator: paletteCoordinator, core: self)

@@ -1,5 +1,6 @@
 import AVFoundation
 import AppKit
+import Contacts
 import EventKit
 // `@preconcurrency` downgrades AX diagnostics: the option key is a constant C global.
 @preconcurrency import ApplicationServices
@@ -38,6 +39,18 @@ enum Permissions {
     /// The store is built and dropped here: a grant is process-wide, so nothing travels.
     nonisolated static func requestCalendarAccess() async -> Bool {
         (try? await EKEventStore().requestFullAccessToEvents()) ?? false
+    }
+
+    static func contactsAccess() -> ContactsAccess {
+        switch CNContactStore.authorizationStatus(for: .contacts) {
+        case .authorized, .limited: return .granted
+        case .notDetermined: return .notDetermined
+        default: return .denied
+        }
+    }
+
+    nonisolated static func requestContactsAccess() async -> Bool {
+        (try? await CNContactStore().requestAccess(for: .contacts)) ?? false
     }
 
     static func cameraAccess() -> CameraAccess {

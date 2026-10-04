@@ -24,6 +24,8 @@ final class PaletteState {
     var fileSearchFilter: FileSearchFilter = .all
     /// The emoji picker's visible category, reset with the rest of a freshly opened screen.
     var emojiCategoryFilter: EmojiCategoryFilter = .all
+    /// The card the contact-fields screen shows; set before that screen is pushed.
+    var contactID: String?
     /// Nil means the configured default; zoom only overrides it for this picker session.
     var emojiGridColumnsOverride: EmojiGridColumns?
     /// Whether file search draws its Quick Look overlay; it follows whatever row is selected.
