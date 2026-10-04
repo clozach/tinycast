@@ -333,25 +333,35 @@ revealed: `activate` routes to `FallbackCoordinator.run` instead of `LauncherCoo
 
 ### Emoji results
 
-A typed query of two or more characters adds up to four emoji under an **Emoji** header:
-`EmojiIndex.search` with the picker's own frequency boost, memoized as in the picker. They follow the
-leading run of results whose name, subtitle or alias the query hits at a word start or better
-(`FuzzyMatch` tiers exact, prefix, word start); looser fuzzy hits follow them under **More Results**,
-so `heart` shows ❤️ before *Hide All Apps Except Frontmost* while `safari` keeps Safari first.
+A typed query of two or more characters ranks emoji alongside apps and commands in one **Results**
+list. `AppIndex.searchResults` passes a `LauncherSearchResult` union through the same
+`LauncherOrder.ranked` comparator and `LauncherRankingStore` snapshot. There is no Emoji section,
+placement rule, or four-emoji quota: all visible apps and catalog emoji compete before the shared
+200-result limit. Existing app learning is retained, so choosing Keyboard Maestro for `km` can put
+it above Bookmark and other emoji.
 
-Emoji rows draw in Settings' default skin tone, since that is what ↵ pastes.
+Emoji names, individual CLDR synonym phrases, localized keywords, glyphs and colon-wrapped names
+(such as `:+1:`) are pre-folded into search profiles at catalog load. Root search uses the launcher's
+fuzzy matching and sensitivity, including its treatment of word order; the dedicated emoji picker
+retains its specialized unordered-word matching and keyword tiers. Exact user aliases still win.
 
-**Fork only:** while Al's Unimagic extension is installed, every emoji row's ⌘K adds *Search in
-Unimagic*, which opens it already searching the query (`ExtensionCoordinator.searchGlyphs`), and
-shows Unimagic's hotkey beside it — that hotkey does the same from root search (see
-[extensions.md](extensions.md#shortcuts)). They are `LauncherScreen.Row.emoji` rows, not `AppEntry`s — an emoji has no kind, pane or
-visibility switch — so ranking, learning and favorites never see them. One
-letter would match hundreds and trail every app search, hence the minimum; a category name shows its
-sections instead. ↵ pastes into the app the palette came from, ⌘↵ copies, ⌥↵ pastes and keeps the
-palette open, and ⌘K offers the same three through `EmojiActionsMenu.deliveryItems`, which the
-picker's menu shares. **Show Emoji in Search Results** (Settings › Emoji & Symbols ›
-Search, `emojiInSearchResults`, on by default) turns them off; settings backups and `settings.json`
-carry it.
+Every emoji copy or paste records a visit under its base glyph in the shared ranking store, and a
+root action also records the query. Keyboard actions, clicks and the Actions menu share that learning.
+Emoji used in the picker contribute usage without teaching a root query. The picker's existing
+frequency history remains separate. Root emoji offer **Reset Ranking** in Actions; the global
+ranking reset clears their learned visits too. Paste-and-keep-open follows the same glyph if it moves.
+
+Emoji rows draw in Settings' default skin tone, since that is what ↵ pastes. ↵ pastes into the app the
+palette came from, ⌘↵ copies, and ⌥↵ pastes and keeps the palette open. ⌘K offers the same three
+through `EmojiActionsMenu.deliveryItems`. A category name still shows its own sections, and a
+one-character query keeps the existing app-only behavior. **Show Emoji in Search Results**
+(Settings › Emoji & Symbols › Search, `emojiInSearchResults`, on by default) turns the integration
+off; settings backups and `settings.json` carry it.
+
+**Fork only:** while Al's Unimagic extension is installed, an emoji row's ⌘K also offers *Search in
+Unimagic*, opening it with the current query and displaying its configured hotkey. Emoji remain
+typed rows with their own delivery behavior; they do not acquire application-only actions,
+favorites or visibility settings.
 
 ### User aliases
 

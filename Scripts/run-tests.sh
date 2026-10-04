@@ -180,18 +180,31 @@ run emoji-test             Tinycast/Features/Emoji/Model/EmojiCatalog.swift \
                            Tinycast/Features/Emoji/Model/EmojiGridGeometry.swift \
                            Tinycast/Features/Emoji/Model/EmojiData.generated.swift
 run emoji-search-test      Tinycast/Features/Emoji/Model/EmojiCatalog.swift \
+                           Tinycast/Features/Emoji/Model/EmojiSearchProfile.swift \
                            Tinycast/Features/Emoji/Model/EmojiData.generated.swift \
                            Tinycast/Features/Emoji/Service/EmojiIndex.swift \
                            Tinycast/Features/Emoji/Service/FrequentEmojiStore.swift \
                            Tinycast/Features/Emoji/Service/PinnedEmojiStore.swift \
-                           Tinycast/Features/Launcher/Model/SearchRelevance.swift \
+                           $L/SearchRelevance.swift $L/ScriptRomanization.swift \
+                           $L/LauncherMatch.swift $L/EntryNaming.swift \
                            Tinycast/Platform/AppPaths.swift Tinycast/Platform/Memo.swift
-run index emoji-search-performance \
-                           Tinycast/Features/Emoji/Model/EmojiCatalog.swift \
+run -O emoji-root-search-test Tinycast/Features/Emoji/Model/EmojiCatalog.swift \
+                           Tinycast/Features/Emoji/Model/EmojiSearchProfile.swift \
                            Tinycast/Features/Emoji/Model/EmojiData.generated.swift \
                            Tinycast/Features/Emoji/Service/EmojiIndex.swift \
                            Tinycast/Features/Emoji/Service/FrequentEmojiStore.swift \
-                           Tinycast/Features/Launcher/Model/SearchRelevance.swift \
+                           $L/SearchRelevance.swift $L/ScriptRomanization.swift \
+                           $L/LauncherMatch.swift $L/EntryNaming.swift $L/LauncherOrder.swift \
+                           $L/LauncherRankingStore.swift \
+                           Tinycast/Platform/AppPaths.swift Tinycast/Platform/Memo.swift
+run index emoji-search-performance \
+                           Tinycast/Features/Emoji/Model/EmojiCatalog.swift \
+                           Tinycast/Features/Emoji/Model/EmojiSearchProfile.swift \
+                           Tinycast/Features/Emoji/Model/EmojiData.generated.swift \
+                           Tinycast/Features/Emoji/Service/EmojiIndex.swift \
+                           Tinycast/Features/Emoji/Service/FrequentEmojiStore.swift \
+                           $L/SearchRelevance.swift $L/ScriptRomanization.swift \
+                           $L/LauncherMatch.swift $L/EntryNaming.swift \
                            Tinycast/Platform/AppPaths.swift Tinycast/Platform/Memo.swift
 run contacts-test          Tinycast/Features/Contacts/Model/ContactCard.swift \
                            Tinycast/Features/Contacts/Model/ContactRecall.swift \

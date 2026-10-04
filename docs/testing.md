@@ -19,6 +19,16 @@ There is no CI: every item is on you, run locally. CodeRabbit reviews each PR, b
 not a gate. Each is expanded below; the manual sweep at the end of this file is the sixth, judged by
 what you touched.
 
+## Root emoji ranking smoke check
+
+- Type `km`: Keyboard Maestro and matching emoji share Results, with no Emoji or More Results heading.
+- Select Keyboard Maestro, press Return, and reopen the same query: the app can become the default.
+- Search `heart`, select a different heart, and copy it with ⌘Return; reopen the query to check learning.
+- Repeat using the emoji Actions menu; ⌥Return keeps the palette open on the glyph just pasted.
+- Reset that emoji's ranking from Actions; the selection follows it to its new place.
+- Disable Show Emoji in Search Results, then re-enable it; app order and stored learning survive.
+- Empty-query Favorites, category listings, calculator cards and typed-URL results retain their behavior.
+
 ## The harnesses
 
 ```sh
@@ -98,6 +108,7 @@ If a change touches anything in the right column, the harness on the left is man
 | `pasteboard-test` | `Clipboard/Service/ClipboardManager.swift` capture and `Paster.write` — what a Finder copy reads as, and what a file entry writes back |
 | `emoji-test` | `Emoji/Model/EmojiCatalog.swift`, `EmojiGridGeometry.swift`, the generated data and keyword packs |
 | `emoji-search-test` | `Emoji/Service/EmojiIndex.swift`, `FrequentEmojiStore.swift`, `Scripts/gen-emoji.js`'s keyword format, multilingual search |
+| `emoji-root-search-test` | Shared app/emoji ranking, KM learning in both directions, aliases, synonyms, colon names, localized keywords, full candidate pool, reset and persistence |
 | `palette-navigation-test` | `Palette/PaletteState.swift`'s screen motions — `prepare`, `replace`, `push`, `pop` |
 | `palette-selection-test` | `Features/PaletteRowIndex.swift` |
 | `interface-size-test` | `DesignSystem/InterfaceMetrics.swift`, `Features/Settings/InterfaceSize.swift`, `Extensions/Model/ExtensionFormMetrics.swift` |
@@ -272,9 +283,10 @@ missing from its own top five results, and `--languages fr,ja` loads those keywo
 from the repo root):
 
 ```sh
-swiftc -O -swift-version 6 Tinycast/Features/Emoji/Model/{EmojiCatalog,EmojiData.generated}.swift \
+swiftc -O -swift-version 6 Tinycast/Features/Emoji/Model/{EmojiCatalog,EmojiSearchProfile,EmojiData.generated}.swift \
     Tinycast/Features/Emoji/Service/{EmojiIndex,FrequentEmojiStore}.swift \
-    Tinycast/Features/Launcher/Model/SearchRelevance.swift Tinycast/Platform/{AppPaths,Memo}.swift \
+    Tinycast/Features/Launcher/Model/{SearchRelevance,ScriptRomanization,LauncherMatch,EntryNaming}.swift \
+    Tinycast/Platform/{AppPaths,Memo}.swift \
     Tests/emoji-search-performance.swift -o /tmp/emoji-search-performance
 /tmp/emoji-search-performance --names
 /tmp/emoji-search-performance --languages fr,ja

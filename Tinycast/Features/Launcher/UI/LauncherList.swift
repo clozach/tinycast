@@ -3,7 +3,7 @@ import SwiftUI
 struct LauncherList: View {
 
     @Environment(\.metrics) private var metrics
-    let results: [AppEntry]
+    let results: [LauncherSearchResult]
     /// The flat row id the screen has selected, not an entry id: a fallback can repeat a result.
     let selectedRowID: String?
     let favoriteCount: Int
@@ -20,8 +20,7 @@ struct LauncherList: View {
     let onActivate: (AppEntry) -> Void
     let onActions: (AppEntry) -> Void
     let onDropped: () -> Void
-    /// A few emoji the query names, inside the results; nil when there are none.
-    var emoji: EmojiSection?
+    let emoji: EmojiActions
     /// The `Use "…" with` section, always last; nil when nothing is typed.
     var fallbacks: FallbackSection?
     @Environment(RunningAppsMonitor.self) private var runningApps
@@ -35,21 +34,10 @@ struct LauncherList: View {
         let onConfigure: () -> Void
     }
 
-    /// Emoji rows, addressed by position like the fallbacks.
-    struct EmojiSection {
-        /// One drawn row, its glyph already in the tone a paste would use.
-        struct Item {
-            let id: String
-            let glyph: String
-            let title: String
-            let trailing: String
-        }
-
-        let items: [Item]
-        /// How many results come before them; the rest follow under More Results.
-        let after: Int
-        let onActivate: (Int) -> Void
-        let onActions: (Int) -> Void
+    struct EmojiActions {
+        let tone: EmojiSkinTone
+        let onActivate: (EmojiEntry) -> Void
+        let onActions: (EmojiEntry) -> Void
     }
 
     /// Calc answers a typed query and the card an empty one, so only one ever leads.
@@ -83,7 +71,7 @@ struct LauncherList: View {
         /// `slot` is the row's ⌘-digit, carried from the section build rather than searched.
         case app(AppEntry, slot: Character?)
         case fallback(AppEntry, index: Int)
-        case emoji(EmojiSection.Item, index: Int)
+        case emoji(EmojiEntry)
         var id: String {
             switch self {
             case .header(let title): return "header-" + title
@@ -91,7 +79,7 @@ struct LauncherList: View {
             case .card(let card): return card.rowID
             case .app(let app, _): return app.id
             case .fallback(let app, _): return "fallback-" + app.id
-            case .emoji(let item, _): return item.id
+            case .emoji(let entry): return EmojiSearchProfile.preferenceKey(for: entry)
             }
         }
     }
@@ -106,12 +94,6 @@ struct LauncherList: View {
         return selectedRowID != nil && selectedRowID == first?.id
     }
 
-    /// Every row the emoji section contributes, between the results and the fallbacks.
-    private var emojiRows: [Row] {
-        guard let emoji else { return [] }
-        return [.header("Emoji")] + emoji.items.enumerated().map { Row.emoji($1, index: $0) }
-    }
-
     /// Every row the fallback section contributes, always after the results.
     private var fallbackRows: [Row] {
         guard let fallbacks else { return [] }
@@ -123,14 +105,18 @@ struct LauncherList: View {
         var cardRows: [Row] = []
         if let card { cardRows = [.header(card.sectionTitle), .card(card)] }
         guard showSections else {
-            let after = emoji?.after ?? results.count
-            let leading = results.prefix(after).map { Row.app($0, slot: nil) }
-            let trailing = results.dropFirst(after).map { Row.app($0, slot: nil) }
-            return cardRows + (leading.isEmpty ? [] : [.header("Results")] + leading) + emojiRows
-                + (trailing.isEmpty ? [] : [.header(leading.isEmpty ? "Results" : "More Results")] + trailing)
-                + fallbackRows
+            let ranked = results.map { result -> Row in
+                switch result {
+                case .entry(let entry): return .app(entry, slot: nil)
+                case .emoji(let entry): return .emoji(entry)
+                }
+            }
+            return cardRows + (ranked.isEmpty ? [] : [.header("Results")] + ranked) + fallbackRows
         }
         var rows: [Row] = cardRows
+        let results = results.compactMap { result -> AppEntry? in
+            if case .entry(let entry) = result { entry } else { nil }
+        }
         let favorites = results.prefix(favoriteCount)
         let meetings = results.dropFirst(favoriteCount).prefix(meetingCount)
         let suggestions = results.dropFirst(favoriteCount + meetingCount).prefix(suggestionCount)
@@ -168,13 +154,13 @@ struct LauncherList: View {
             grouped.keys.allSatisfy(kinds.contains),
             "kind missing from the launcher's section order: "
                 + grouped.keys.filter { !kinds.contains($0) }.map(\.rawValue).joined(separator: ", "))
-        return rows + emojiRows + fallbackRows
+        return rows + fallbackRows
     }
 
     var body: some View {
         let rows = rows
         return Group {
-            if results.isEmpty && card == nil && emoji == nil && fallbacks == nil {
+            if results.isEmpty && card == nil && fallbacks == nil {
                 EmptyResults(text: "No apps found")
             } else {
                 ScrollViewReader { proxy in
@@ -216,11 +202,12 @@ struct LauncherList: View {
                                     .onTapGesture { fallbacks?.onActivate(index) }
                                     .onRightClick { fallbacks?.onActions(index) }
                                     .selectionFrame(row.id == selectedRowID)
-                                case .emoji(let item, let index):
-                                    EmojiResultRow(item: item, selected: row.id == selectedRowID)
+                                case .emoji(let entry):
+                                    EmojiResultRow(
+                                        entry: entry, tone: emoji.tone, selected: row.id == selectedRowID)
                                         .contentShape(Rectangle())
-                                        .onTapGesture { emoji?.onActivate(index) }
-                                        .onRightClick { emoji?.onActions(index) }
+                                        .onTapGesture { emoji.onActivate(entry) }
+                                        .onRightClick { emoji.onActions(entry) }
                                         .selectionFrame(row.id == selectedRowID)
                                 }
                             }
@@ -373,7 +360,8 @@ private struct AppRow: View {
 /// An emoji in root search, in the row grammar every result shares: the glyph fills the icon slot.
 private struct EmojiResultRow: View {
     @Environment(\.metrics) private var metrics
-    let item: LauncherList.EmojiSection.Item
+    let entry: EmojiEntry
+    let tone: EmojiSkinTone
     let selected: Bool
     @State private var hovered = false
 
@@ -386,15 +374,15 @@ private struct EmojiResultRow: View {
 
     var body: some View {
         HStack(spacing: metrics.spacing.lg) {
-            Text(item.glyph)
+            Text(entry.display(tone: tone))
                 .font(.system(size: metrics.size.resultRowIcon * 0.8))
                 .frame(width: metrics.size.resultRowIcon, height: metrics.size.resultRowIcon)
-            Text(item.title)
+            Text(entry.displayName)
                 .font(metrics.typography.rowTitle)
                 .lineLimit(1)
-                .help(item.title)
+                .help(entry.displayName)
             Spacer()
-            Text(item.trailing)
+            Text(entry.category.itemTitle)
                 .font(metrics.typography.rowTrailing)
                 .foregroundStyle(.secondary)
         }

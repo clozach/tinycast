@@ -318,7 +318,7 @@ struct FuzzTest {
 
     static let apps: [Item] = [
         "Screen Sharing", "Calculator", "Xcode", "Google Chrome", "AirPort Utility", "Notes", "微信",
-        "网易云音乐", "Телеграм", "Café Noir"
+        "网易云音乐", "Телеграм", "Café Noir", "Keyboard Maestro", "Keymapp"
     ].map { Item(name: $0, priority: 4) }
 
     /// Synthetic, and dense where names collide. A new complaint is a new case in `denseIndex`.
@@ -337,7 +337,9 @@ struct FuzzTest {
             Item(name: "AI Chat", boosted: ["ai", "chat"]), Item(name: "Search Files"),
             Item(name: "Search Notes"), Item(name: "Show Notes"), Item(name: "Set Volume"),
             Item(name: "Search", subtitle: "Brew"), Item(name: "Upgrade", subtitle: "Brew"),
-            Item(name: "Signature Block", alternates: ["sig"])
+            Item(name: "Signature Block", alternates: ["sig"]),
+            Item(name: "Bookmark"), Item(name: "Bookmark Tabs"),
+            Item(name: "Flag: Turkmenistan"), Item(name: "Check Mark Button")
         ]
 
     /// One pick, replayed through the shipped store's own arithmetic.
@@ -366,6 +368,7 @@ struct FuzzTest {
             ("address book", "Contacts", "…two words long"),
             ("work chat", "Slack", "a renamed bundle, by the name on disk"),
             ("vsc", "Visual Studio Code", "initials of a three-word name"),
+            ("km", "Keyboard Maestro", "initials compete with matching emoji names"),
             ("code", "Visual Studio Code", "a last word, where Xcode only matches mid-word"),
             ("gc", "Google Chrome", "initials, over a pane sharing them"),
             ("calcu", "Calculator", "an app wins the tie with the command named after it"),
@@ -385,6 +388,9 @@ struct FuzzTest {
         check("an alternate title mints no pinyin", !rank("ll", index).contains("Safari"))
         check("High keeps letter soup out", !rank("olu", index).contains("Set Volume"))
         check("a pick is learned for its query", rank("sa", picking("Slack", by: "sa")).first == "Slack")
+        check(
+            "a learned app can beat matching emoji names",
+            rank("km", picking("Keyboard Maestro", by: "km")).first == "Keyboard Maestro")
         check("…and recalled under a shorter one", rank("s", picking("Slack", by: "sa")).first == "Slack")
         check(
             "a stale habit stops steering",

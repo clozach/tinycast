@@ -35,10 +35,7 @@ struct LauncherScreen: PaletteScreen {
     private let suggestionCount: Int
     /// The `Use "…" with` section, below every result; empty unless something is typed.
     private let fallbacks: [(fallback: Fallback, entry: AppEntry)]
-    /// A few emoji the query names, after the results that start a word with it.
-    private let emoji: [EmojiEntry]
-    /// How many of `results` the emoji follow: the leading run that starts a word with the query.
-    private let emojiAfter: Int
+    private let searchResults: [LauncherSearchResult]
     /// Resolved in `init`: the palette indexes this several times per event, so it can't recompute.
     let rows: [Row]
 
@@ -67,12 +64,16 @@ struct LauncherScreen: PaletteScreen {
             pinned.map { AppIndex.Results(entries: [$0]) }
             ?? appIndex.orderedResults(
                 query: vm.query, visibility: visibility, favorites: favorites, hotKeys: core.hotKeys)
-        var results = ordered.entries
+        var searchResults = ordered.entries.map(LauncherSearchResult.entry)
+        if pinned == nil, Self.includesEmoji(query: vm.query, core: core) {
+            searchResults = appIndex.searchResults(
+                query: vm.query, visibility: visibility, emojiIndex: core.emojiIndex)
+        }
         // A typed web address leads: nothing the index holds answers it better.
         if pinned == nil, let browser = CommandCatalog.openInBrowser(for: vm.query),
             visibility.isVisible(browser)
         {
-            results.insert(browser, at: 0)
+            searchResults.insert(.entry(browser), at: 0)
         }
         // No card over a pinned row: its fields hang off the selection, which must start on it.
         let calc =
@@ -81,24 +82,22 @@ struct LauncherScreen: PaletteScreen {
         // After the calculator: `#FF5733` is never arithmetic, so the two can't both answer.
         let color = calc == nil && pinned == nil ? ColorValue.parse(vm.query) : nil
         let fallbacks = core.fallbackCoordinator.entries(for: vm.query)
-        let emoji = pinned == nil ? Self.emojiMatches(query: vm.query, core: core) : []
-        let emojiAfter =
-            emoji.isEmpty
-            ? results.count
-            : results.prefix { Self.startsWord(vm.query, in: $0, aliases: core.aliases) }.count
-        let entries =
-            results.prefix(emojiAfter).map(Row.entry) + emoji.map(Row.emoji)
-            + results.dropFirst(emojiAfter).map(Row.entry)
-            + fallbacks.map { Row.fallback($0.fallback, $0.entry) }
+        let entries = searchResults.map { result -> Row in
+            switch result {
+            case .entry(let entry): return .entry(entry)
+            case .emoji(let entry): return .emoji(entry)
+            }
+        } + fallbacks.map { Row.fallback($0.fallback, $0.entry) }
         let pinsFavorites = vm.query.trimmingCharacters(in: .whitespaces).isEmpty
         // At most one of them leads, so the flat index keeps a single-row offset.
         let meeting = pinsFavorites ? meeting : nil
         self.meeting = meeting
-        self.results = results
+        self.results = searchResults.compactMap {
+            if case .entry(let entry) = $0 { entry } else { nil }
+        }
+        self.searchResults = searchResults
         self.calc = calc
         self.fallbacks = fallbacks
-        self.emoji = emoji
-        self.emojiAfter = emojiAfter
         self.color = color
         self.showSections = pinsFavorites || AppEntry.Kind.named(by: vm.query) != nil
         self.pinsFavorites = pinsFavorites
@@ -138,28 +137,16 @@ struct LauncherScreen: PaletteScreen {
         }
     }
 
-    private static let emojiLimit = 4
     /// One letter names hundreds of emoji, which would then trail every app search.
     private static let emojiMinimumQuery = 2
 
     /// None for a category name, which shows its own sections, or with the setting off.
-    private static func emojiMatches(query: String, core: AppCore) -> [EmojiEntry] {
+    private static func includesEmoji(query: String, core: AppCore) -> Bool {
         let typed = query.trimmingCharacters(in: .whitespaces)
         guard core.settings.emojiInSearchResults, typed.count >= emojiMinimumQuery,
             AppEntry.Kind.named(by: query) == nil
-        else { return [] }
-        return core.emojiIndex.search(typed, frequent: core.frequentEmoji, limit: emojiLimit)
-    }
-
-    /// A hit the user plainly typed toward; a looser fuzzy match yields its place to the emoji.
-    private static func startsWord(_ query: String, in app: AppEntry, aliases: AliasStore) -> Bool {
-        let fields = [app.name, app.subtitle, aliases.alias(for: app.preferenceKey)].compactMap { $0 }
-        return fields.contains { field in
-            switch FuzzyMatch.match(query: query, candidate: field)?.tier {
-            case .exact, .prefix, .wordStart: true
-            case .substring, .subsequence, nil: false
-            }
-        }
+        else { return false }
+        return true
     }
 
     /// The pill carries no selection, so the screen applies the clamp the palette applies.
@@ -279,7 +266,7 @@ struct LauncherScreen: PaletteScreen {
                 onResetRanking: {
                     core.launcherCoordinator.resetRanking(for: app)
                     // Reset can move the item; keep the highlight on the item whose action ran.
-                    if let index = rows.firstIndex(of: .entry(app)) { vm.selection = index }
+                    follow(app)
                 },
                 onHideFromSearch: { _ = hideFromSearch(at: selection) })
         case .fallback(let fallback, let app):
@@ -288,8 +275,9 @@ struct LauncherScreen: PaletteScreen {
         case .emoji(let entry):
             return PopoverMenuContent(
                 header: entry.displayName,
-                items: EmojiActionsMenu.deliveryItems(entry: entry, core: core, target: vm.pasteTarget)
-                    + glyphSearchItem())
+                items: EmojiActionsMenu.deliveryItems(
+                    entry: entry, core: core, target: vm.pasteTarget, searchQuery: vm.query,
+                    onKeepOpen: { followEmoji(entry) }) + emojiRankingItems(entry) + glyphSearchItem())
         case nil:
             return nil
         }
@@ -307,7 +295,7 @@ struct LauncherScreen: PaletteScreen {
                 app, searchQuery: vm.query, arguments: argumentValues(for: app))
         case .fallback(let fallback, _):
             core.fallbackCoordinator.run(fallback, query: vm.query)
-        case .emoji(let entry): core.emojiCoordinator.pasteEmoji(entry)
+        case .emoji(let entry): core.emojiCoordinator.pasteEmoji(entry, searchQuery: vm.query)
         case nil: break
         }
     }
@@ -328,7 +316,8 @@ struct LauncherScreen: PaletteScreen {
     /// ⌥↵ — as in the emoji picker, a run of emoji goes over without re-summoning the palette.
     func pasteKeepingWindowOpen(at selection: Int) -> Bool {
         guard case .emoji(let entry) = row(at: selection) else { return false }
-        core.emojiCoordinator.pasteEmojiKeepingWindowOpen(entry)
+        core.emojiCoordinator.pasteEmojiKeepingWindowOpen(entry, searchQuery: vm.query)
+        followEmoji(entry)
         return true
     }
 
@@ -345,7 +334,7 @@ struct LauncherScreen: PaletteScreen {
     /// ⌘↵ — a meeting copies its link; otherwise only an entry on disk has somewhere to be revealed.
     func secondary(at selection: Int) -> Bool {
         if case .emoji(let entry) = row(at: selection) {
-            core.emojiCoordinator.copyEmoji(entry)
+            core.emojiCoordinator.copyEmoji(entry, searchQuery: vm.query)
             return true
         }
         if let meeting = meeting(at: selection) {
@@ -454,16 +443,17 @@ struct LauncherScreen: PaletteScreen {
     /// ⇧⌘H — the row leaves the list for good, so the highlight takes the place it vacated.
     private func hideFromSearch(at selection: Int) -> Bool {
         guard let app = entry(at: selection), app.canHideFromSearch,
-            !CommandCatalog.isQueryDriven(app), let index = results.firstIndex(of: app)
+            !CommandCatalog.isQueryDriven(app)
         else { return false }
         visibility.setItemVisible(false, for: app)
-        select(row: min(index, max(reorderedResults().entries.count - 1, 0)))
+        let index = selection - (leadCard == nil ? 0 : 1)
+        select(row: min(index, max(reorderedSearchResults().count - 1, 0)))
         return true
     }
 
     /// The list reorders under an action; keep the highlight and the scroll on the row that moved.
     private func follow(_ app: AppEntry) {
-        guard let index = reorderedResults().entries.firstIndex(of: app) else { return }
+        guard let index = reorderedSearchResults().firstIndex(of: .entry(app)) else { return }
         select(row: index)
     }
 
@@ -480,9 +470,34 @@ struct LauncherScreen: PaletteScreen {
     }
 
     private func select(row index: Int) {
-        let emojiShift = index < emojiAfter ? 0 : emoji.count
-        vm.selection = index + emojiShift + (leadCard == nil ? 0 : 1)
+        vm.selection = index + (leadCard == nil ? 0 : 1)
         scrollToFollow()
+    }
+
+    private func reorderedSearchResults() -> [LauncherSearchResult] {
+        var results = Self.includesEmoji(query: vm.query, core: core)
+            ? appIndex.searchResults(query: vm.query, visibility: visibility, emojiIndex: core.emojiIndex)
+            : reorderedResults().entries.map(LauncherSearchResult.entry)
+        if let browser = CommandCatalog.openInBrowser(for: vm.query), visibility.isVisible(browser) {
+            results.insert(.entry(browser), at: 0)
+        }
+        return results
+    }
+
+    private func followEmoji(_ entry: EmojiEntry) {
+        guard let index = reorderedSearchResults().firstIndex(of: .emoji(entry)) else { return }
+        select(row: index)
+    }
+
+    private func emojiRankingItems(_ entry: EmojiEntry) -> [PopoverMenuItem] {
+        let key = EmojiSearchProfile.preferenceKey(for: entry)
+        guard core.launcherRanking.hasRanking(for: key) else { return [] }
+        return [PopoverMenuItem(
+            title: "Reset Ranking", systemImage: "arrow.counterclockwise", startsSection: true
+        ) {
+            core.emojiCoordinator.resetRanking(entry)
+            followEmoji(entry)
+        }]
     }
 
     /// The sample `openActions` takes; only an app row can ever carry the running-only actions.
@@ -504,7 +519,7 @@ struct LauncherScreen: PaletteScreen {
     @ViewBuilder
     private func content(selection: Int, scroll: ScrollIntent) -> some View {
         LauncherList(
-            results: results,
+            results: searchResults,
             selectedRowID: row(at: selection)?.id,
             favoriteCount: favoriteCount,
             meetingCount: meetingCount,
@@ -531,30 +546,16 @@ struct LauncherScreen: PaletteScreen {
                 openActions()
             },
             onDropped: { core.paletteCoordinator.dragLanded() },
-            emoji: emojiSection,
+            emoji: .init(
+                tone: core.emojiCoordinator.defaultTone,
+                onActivate: { core.emojiCoordinator.pasteEmoji($0, searchQuery: vm.query) },
+                onActions: { entry in
+                    if let index = rows.firstIndex(of: .emoji(entry)) { vm.selection = index }
+                    openActions()
+                }),
             fallbacks: fallbackSection
         )
     }
-
-    private var emojiSection: LauncherList.EmojiSection? {
-        guard !emoji.isEmpty else { return nil }
-        let tone = core.emojiCoordinator.defaultTone
-        return LauncherList.EmojiSection(
-            items: emoji.map { entry in
-                .init(
-                    id: Row.emoji(entry).id, glyph: entry.display(tone: tone),
-                    title: entry.displayName, trailing: entry.category.itemTitle)
-            },
-            after: emojiAfter,
-            onActivate: { activate(at: emojiRow(at: $0)) },
-            onActions: {
-                vm.selection = emojiRow(at: $0)
-                openActions()
-            })
-    }
-
-    /// Emoji follow the card, if any, and the results that start a word with the query.
-    private func emojiRow(at index: Int) -> Int { (leadCard == nil ? 0 : 1) + emojiAfter + index }
 
     /// Nil when nothing is typed, which is the one state the section has no input for.
     private var fallbackSection: LauncherList.FallbackSection? {

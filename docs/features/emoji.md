@@ -92,6 +92,6 @@ does not silently change the preference. Actual Size (`⌘0`) clears that overri
 remove or add one column. Removing the selected item from the leading Pinned section keeps the
 selection on the neighbour that takes its place instead of following the item into the catalog.
 
-Root search also lists up to four matching emoji below its results, from the same index and frequency
-boost; see [launcher.md](launcher.md#emoji-results). **Show Emoji in
+Root search ranks emoji alongside apps and commands with shared learned queries and usage;
+see [launcher.md](launcher.md#emoji-results). **Show Emoji in
 Search Results** turns that off.

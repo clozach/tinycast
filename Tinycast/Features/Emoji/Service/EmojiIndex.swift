@@ -36,22 +36,27 @@ final class EmojiIndex {
     }
 
     private var byGlyph: [String: EmojiEntry] = [:]
+    private var launcherProfiles: [String: SearchProfile] = [:]
     /// Parallel to `entries`.
     private var foldedEntries: [FoldedEntry] = []
     @ObservationIgnored private var searchMemo = Memo<SearchKey, [EmojiEntry]>()
     /// Bumped on each load, so the key above names the catalog it scored.
-    private var revision = 0
+    private(set) var revision = 0
 
     var isLoaded: Bool { !entries.isEmpty }
 
     /// `languages` pick which of the bundle's keyword packs join the catalog's English keywords.
     func load(_ raw: String = EmojiData.raw, languages: [String] = [], bundle: Bundle = .main) async {
-        let (parsed, folded) = await Task.detached(priority: .utility) {
+        let (parsed, folded, profiles) = await Task.detached(priority: .utility) {
             let parsed = EmojiCatalog.parse(raw, localized: Self.keywordPacks(for: languages, in: bundle))
-            return (parsed, parsed.map(FoldedEntry.init))
+            let profiles = Dictionary(
+                parsed.map { ($0.glyph, EmojiSearchProfile.make($0)) },
+                uniquingKeysWith: { first, _ in first })
+            return (parsed, parsed.map(FoldedEntry.init), profiles)
         }.value
         entries = parsed
         foldedEntries = folded
+        launcherProfiles = profiles
         var grouped: [EmojiCategory: [EmojiEntry]] = [:]
         for entry in parsed { grouped[entry.category, default: []].append(entry) }
         categorySections = EmojiCategory.allCases.compactMap { category in
@@ -72,6 +77,10 @@ final class EmojiIndex {
     }
 
     func entry(for glyph: String) -> EmojiEntry? { byGlyph[glyph] }
+
+    func launcherProfile(for entry: EmojiEntry) -> SearchProfile {
+        launcherProfiles[entry.glyph] ?? .unnamed
+    }
 
     /// Ranked fuzzy matches over names and keywords; an empty query returns nothing.
     func search(_ query: String, frequent: FrequentEmojiStore, limit: Int = 320) -> [EmojiEntry] {

@@ -352,10 +352,18 @@ final class AppIndex {
         let minute: Int
     }
 
+    private struct SearchResultsKey: Equatable {
+        let match: MatchKey
+        let visibilityRevision: Int
+        let emojiID: ObjectIdentifier
+        let emojiRevision: Int
+        let minute: Int
+    }
+
     /// Repeated renders for the same query reuse the ranking instead of re-matching every frame.
     @ObservationIgnored private var matchMemo = Memo<MatchKey, [AppEntry]>()
     @ObservationIgnored private var resultsMemo = Memo<ResultsKey, Results>()
-    /// Bumped whenever `apps` changes, so both memos above name the entry set they were built from.
+    @ObservationIgnored private var searchResultsMemo = Memo<SearchResultsKey, [LauncherSearchResult]>()
     private var entriesRevision = 0
 
     private static let systemActionEntries: [AppEntry] = SystemActionCatalog.all
@@ -715,6 +723,37 @@ final class AppIndex {
     }
 
     private var sensitivity: SearchSensitivity { settings?.rootSearchSensitivity ?? .default }
+
+    func searchResults(
+        query: String, visibility: VisibilityStore, emojiIndex: EmojiIndex
+    ) -> [LauncherSearchResult] {
+        let usage = ranking.snapshot()
+        let key = SearchResultsKey(
+            match: matchKey(query), visibilityRevision: visibility.revision,
+            emojiID: ObjectIdentifier(emojiIndex), emojiRevision: emojiIndex.revision,
+            minute: Int(usage.now.timeIntervalSince1970 / 60))
+        return searchResultsMemo.value(for: key) {
+            let candidates = apps.filter(visibility.isVisible).map(LauncherSearchResult.entry)
+                + emojiIndex.entries.map(LauncherSearchResult.emoji)
+            return LauncherOrder.ranked(
+                candidates, query: LauncherOrder.Query(query), sensitivity: sensitivity, limit: 200,
+                profile: { result in
+                    switch result {
+                    case .entry(let entry): entry.search
+                    case .emoji(let entry): emojiIndex.launcherProfile(for: entry)
+                    }
+                },
+                signals: { result in
+                    switch result {
+                    case .entry(let entry): self.signals(for: entry, usage: usage)
+                    case .emoji(let entry):
+                        LauncherOrder.Signals(
+                            usage: usage.usage(for: EmojiSearchProfile.preferenceKey(for: entry)),
+                            priority: 0, title: entry.displayName)
+                    }
+                })
+        }
+    }
 
     private func matchKey(_ query: String) -> MatchKey {
         MatchKey(

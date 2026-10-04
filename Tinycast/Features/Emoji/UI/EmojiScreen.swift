@@ -224,25 +224,27 @@ enum EmojiActionsMenu {
 
     /// Where an emoji goes — the same three wherever one is offered, picker or root search.
     static func deliveryItems(
-        entry: EmojiEntry, core: AppCore, target: PasteTarget?
+        entry: EmojiEntry, core: AppCore, target: PasteTarget?, searchQuery: String? = nil,
+        onKeepOpen: @escaping () -> Void = {}
     ) -> [PopoverMenuItem] {
         [
             PopoverMenuItem(
                 title: target?.pasteTitle ?? "Paste",
                 icon: .paste(target, fallback: "doc.on.clipboard"), shortcut: "↵"
             ) {
-                core.emojiCoordinator.pasteEmoji(entry)
+                core.emojiCoordinator.pasteEmoji(entry, searchQuery: searchQuery)
             },
             PopoverMenuItem(
                 title: "Copy to Clipboard", systemImage: "doc.on.doc", shortcut: "⌘↵"
             ) {
-                core.emojiCoordinator.copyEmoji(entry)
+                core.emojiCoordinator.copyEmoji(entry, searchQuery: searchQuery)
             },
             PopoverMenuItem(
                 title: "Paste and Keep Window Open",
                 icon: .paste(target, fallback: "macwindow"), shortcut: "⌥↵"
             ) {
-                core.emojiCoordinator.pasteEmojiKeepingWindowOpen(entry)
+                core.emojiCoordinator.pasteEmojiKeepingWindowOpen(entry, searchQuery: searchQuery)
+                onKeepOpen()
             }
         ]
     }
