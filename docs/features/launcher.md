@@ -337,7 +337,17 @@ A typed query of two or more characters adds up to four emoji under an **Emoji**
 `EmojiIndex.search` with the picker's own frequency boost, memoized as in the picker. They follow the
 leading run of results whose name, subtitle or alias the query hits at a word start or better
 (`FuzzyMatch` tiers exact, prefix, word start); looser fuzzy hits follow them under **More Results**,
-so `heart` shows ❤️ before *Hide All Apps Except Frontmost* while `safari` keeps Safari first. They are `LauncherScreen.Row.emoji` rows, not `AppEntry`s — an emoji has no kind, pane or
+so `heart` shows ❤️ before *Hide All Apps Except Frontmost* while `safari` keeps Safari first.
+
+→ on an emoji that takes skin tones lists its six tones under it (indented, the default marked) and
+moves onto the first; ← from a tone, or Escape, closes them again. The open emoji is
+`PaletteState.emojiTones`, keyed by the query, so typing closes them too. On a tone row ↵ pastes that
+tone once and ⌘↵ pastes it and makes it Settings' default tone; emoji rows draw in the default tone
+already, since that is what ↵ pastes.
+
+**Fork only:** while Al's Unimagic extension is installed, every emoji and tone row's ⌘K adds
+*Search in Unimagic* (⌃⌘Space), which opens it already searching the query
+(`ExtensionCoordinator.searchGlyphs`). They are `LauncherScreen.Row.emoji` rows, not `AppEntry`s — an emoji has no kind, pane or
 visibility switch — so ranking, learning and favorites never see them. One
 letter would match hundreds and trail every app search, hence the minimum; a category name shows its
 sections instead. ↵ pastes into the app the palette came from, ⌘↵ copies, ⌥↵ pastes and keeps the

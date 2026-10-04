@@ -37,7 +37,16 @@ struct LauncherList: View {
 
     /// Emoji rows, addressed by position like the fallbacks.
     struct EmojiSection {
-        let entries: [EmojiEntry]
+        /// One drawn row: an emoji, or one of its skin tones indented under it.
+        struct Item {
+            let id: String
+            let glyph: String
+            let title: String
+            let trailing: String
+            var indented = false
+        }
+
+        let items: [Item]
         /// How many results come before them; the rest follow under More Results.
         let after: Int
         let onActivate: (Int) -> Void
@@ -75,7 +84,7 @@ struct LauncherList: View {
         /// `slot` is the row's ⌘-digit, carried from the section build rather than searched.
         case app(AppEntry, slot: Character?)
         case fallback(AppEntry, index: Int)
-        case emoji(EmojiEntry, index: Int)
+        case emoji(EmojiSection.Item, index: Int)
         var id: String {
             switch self {
             case .header(let title): return "header-" + title
@@ -83,7 +92,7 @@ struct LauncherList: View {
             case .card(let card): return card.rowID
             case .app(let app, _): return app.id
             case .fallback(let app, _): return "fallback-" + app.id
-            case .emoji(let entry, _): return "emoji-" + entry.glyph
+            case .emoji(let item, _): return item.id
             }
         }
     }
@@ -101,7 +110,7 @@ struct LauncherList: View {
     /// Every row the emoji section contributes, between the results and the fallbacks.
     private var emojiRows: [Row] {
         guard let emoji else { return [] }
-        return [.header("Emoji")] + emoji.entries.enumerated().map { Row.emoji($1, index: $0) }
+        return [.header("Emoji")] + emoji.items.enumerated().map { Row.emoji($1, index: $0) }
     }
 
     /// Every row the fallback section contributes, always after the results.
@@ -208,8 +217,8 @@ struct LauncherList: View {
                                     .onTapGesture { fallbacks?.onActivate(index) }
                                     .onRightClick { fallbacks?.onActions(index) }
                                     .selectionFrame(row.id == selectedRowID)
-                                case .emoji(let entry, let index):
-                                    EmojiResultRow(entry: entry, selected: row.id == selectedRowID)
+                                case .emoji(let item, let index):
+                                    EmojiResultRow(item: item, selected: row.id == selectedRowID)
                                         .contentShape(Rectangle())
                                         .onTapGesture { emoji?.onActivate(index) }
                                         .onRightClick { emoji?.onActions(index) }
@@ -365,7 +374,7 @@ private struct AppRow: View {
 /// An emoji in root search, in the row grammar every result shares: the glyph fills the icon slot.
 private struct EmojiResultRow: View {
     @Environment(\.metrics) private var metrics
-    let entry: EmojiEntry
+    let item: LauncherList.EmojiSection.Item
     let selected: Bool
     @State private var hovered = false
 
@@ -378,18 +387,19 @@ private struct EmojiResultRow: View {
 
     var body: some View {
         HStack(spacing: metrics.spacing.lg) {
-            Text(entry.glyph)
+            Text(item.glyph)
                 .font(.system(size: metrics.size.resultRowIcon * 0.8))
                 .frame(width: metrics.size.resultRowIcon, height: metrics.size.resultRowIcon)
-            Text(entry.displayName)
+            Text(item.title)
                 .font(metrics.typography.rowTitle)
                 .lineLimit(1)
-                .help(entry.displayName)
+                .help(item.title)
             Spacer()
-            Text(entry.category.itemTitle)
+            Text(item.trailing)
                 .font(metrics.typography.rowTrailing)
                 .foregroundStyle(.secondary)
         }
+        .padding(.leading, item.indented ? metrics.spacing.xl * 2 : 0)
         .padding(.horizontal, metrics.spacing.md)
         .padding(.vertical, metrics.spacing.sm)
         .background(

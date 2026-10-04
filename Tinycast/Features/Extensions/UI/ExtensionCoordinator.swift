@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 
 /// How a command meets the palette: launching, leaving, and the host callbacks it can make.
 @MainActor
@@ -75,10 +76,43 @@ final class ExtensionCoordinator {
         if paletteCoordinator.isShowing(.extensionCommand),
             extensions.running == ExtensionCommandRef(entryID: entryID)
         {
+            if dispatchOwnChord(entryID) { return }
             paletteCoordinator.hidePalette()
             return
         }
         runExtensionCommand(entry)
+    }
+
+    /// An action the open screen binds to the command's own chord takes that second press instead.
+    private func dispatchOwnChord(_ entryID: String) -> Bool {
+        guard case .rendered(let tree) = extensions.state,
+            let shortcut = core.hotKeys.binding(for: .extensionCommand(entryID: entryID))?.shortcut,
+            let character = ASCIIKeyboardLayout.character(for: shortcut.carbonKeyCode)?.first
+        else { return false }
+        let screen = ExtensionScreen(tree: tree, query: palette.query)
+        let selection = min(max(palette.selection, 0), max(screen.items.count - 1, 0))
+        let flags = shortcut.modifierFlags
+        var modifiers: EventModifiers = []
+        if flags.contains(.command) { modifiers.insert(.command) }
+        if flags.contains(.option) { modifiers.insert(.option) }
+        if flags.contains(.control) { modifiers.insert(.control) }
+        if flags.contains(.shift) { modifiers.insert(.shift) }
+        let key = KeyEquivalent(character)
+        guard
+            let handler = ExtensionScreen.actions(in: screen.actionPanel(forItemAt: selection))
+                .first(where: { $0.matches(key: key, modifiers: modifiers) })?.handler
+        else { return false }
+        extensions.dispatch(handler: handler)
+        return true
+    }
+
+    /// Al's own glyph picker, projects/unimagic in his vault; nil unless that extension is installed.
+    var glyphSearchEntry: AppEntry? { extensions.launcherEntry(forEntryID: "extension:unimagic/unimagic") }
+
+    /// Hands a root-search query to the glyph picker, which opens already searching it.
+    func searchGlyphs(_ query: String) {
+        guard let entry = glyphSearchEntry else { return }
+        runExtensionCommand(entry, fallbackText: query)
     }
 
     /// A `raycast://extensions/…` link: the same command the launcher would run, by slug.

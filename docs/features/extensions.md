@@ -575,7 +575,11 @@ run, and an extension is a set of commands. `HotKeyAction.extensionCommand` is k
 entry id (`extension:<extension>/<command>`).
 
 A view command summons the palette when the shortcut fires while it is hidden, or it would load
-behind a closed window. A no-view command still hides it and reports through its HUD.
+behind a closed window. A no-view command still hides it and reports through its HUD. Pressed again
+while its command is showing, the shortcut closes it — unless the selected item has an action whose
+own `shortcut` is that same chord, which then runs instead. A global chord never reaches the
+palette's key handlers, so this is how a command reuses its own hotkey (Unimagic opens its skin-tone
+picker on a second ⌥⌘G); `ExtensionCoordinator.dispatchOwnChord` does the matching.
 
 Its index is not pruned at launch the way the UUID-keyed ones are: the installed set is scanned
 asynchronously and only while extensions are on, so at launch "not installed yet" and "gone" look

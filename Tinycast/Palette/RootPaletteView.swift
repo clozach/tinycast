@@ -539,6 +539,13 @@ struct RootPaletteView: View {
                 if menuPanel.isClosing { return .handled }
                 // An open control list owns Escape before the palette beneath it.
                 if vm.isControlListOpen { return .ignored }
+                if !menuOpen, let launcher = screen as? LauncherScreen,
+                    let emojiRow = launcher.closeEmojiTones()
+                {
+                    vm.selection = emojiRow
+                    scroll = ScrollIntent(kind: .follow)
+                    return .handled
+                }
                 switch PaletteEscapeAction.resolve(
                     menuOpen: menuOpen, menuQuery: vm.menuQuery,
                     argumentFocused: argumentFocused != nil, query: vm.query, mode: vm.mode,
