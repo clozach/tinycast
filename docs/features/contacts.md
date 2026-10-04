@@ -18,8 +18,9 @@ locally through the Contacts framework — no network, no copy on disk.
   Contacts shows on the next keystroke. Nothing is persisted.
 - **`ContactSearch` is the only ranking.** A name hit beats a company hit beats an email or a number,
   and a subsequence match counts as no match: in an address book, `lvlc` finding Lovelace is noise.
-  Three or more digits also match a number stripped to its digits, so `5551234` finds
-  `(415) 555-1234`. `contacts-test` pins the order.
+  Names and companies also match without their apostrophes, so `lozach` finds Lozac'h as a word
+  start rather than ranking below a mid-word hit. Three or more digits also match a number stripped to
+  its digits, so `5551234` finds `(415) 555-1234`. `contacts-test` pins the order.
 - **The shortcut is the sub-search key.** `ContactsCoordinator.runShortcut()`: from anywhere it opens
   the list (carrying a typed root search, see [hotkeys.md](hotkeys.md)); on the list with a card
   selected it pushes that card's fields; on the fields it closes the palette. ⌘I does the same push for

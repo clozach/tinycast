@@ -31,6 +31,9 @@ struct ContactsTests {
             id: "engines", name: "Engines Ltd", organization: "Engines Ltd", isCompany: true, fields: [])
         let adair = ContactCard(
             id: "adair", name: "Bob Adair", organization: "Ada Analytics", isCompany: false, fields: [])
+        let chris = ContactCard(id: "chris", name: "Chris Lozac\u{2019}h", organization: "", isCompany: false, fields: [])
+        let wave = ContactCard(id: "wave", name: "clozach@wave.example", organization: "", isCompany: false, fields: [])
+        let obrien = ContactCard(id: "obrien", name: "Pat O'Brien", organization: "", isCompany: false, fields: [])
         let cards = [grace, engines, ada, adair]
 
         let all = ContactSearch.rank(cards, query: "  ")
@@ -49,6 +52,13 @@ struct ContactsTests {
         expect(ContactSearch.rank(cards, query: "5551234").map(\.id) == ["ada"], "digits find a formatted number")
         expect(ContactSearch.rank(cards, query: "51").isEmpty, "two digits are too few to strip a number to its digits")
         expect(ContactSearch.rank(cards, query: "lvlc").isEmpty, "a loose subsequence matches nothing")
+
+        let named = [wave, chris, obrien]
+        expect(ContactSearch.rank(named, query: "lozach").map(\.id) == ["chris", "wave"],
+            "a name read without its apostrophe starts a word, ahead of a mid-word hit")
+        expect(ContactSearch.rank(named, query: "obrien").map(\.id) == ["obrien"], "O'Brien matches obrien")
+        expect(ContactSearch.rank(named, query: "brien").map(\.id) == ["obrien"], "brien still finds O'Brien")
+        expect(ContactSearch.rank(named, query: "lozac'h").first?.id == "chris", "a typed apostrophe matches a curly one")
 
         let fields = ada.fields
         expect(ContactSearch.filter(fields, query: "").count == 3, "an empty filter keeps every field")
