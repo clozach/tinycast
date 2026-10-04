@@ -30,19 +30,19 @@ final class ContactsCoordinator {
         }
     }
 
-    /// Reopened within the Remember setting, the search holds the last card's name, selected.
+    /// Reopened within the Remember setting, the search that found the last card returns, selected.
     func show(carrying typed: String = "") {
         // The shortcut over an empty list closes it, as it did before there was anything to recall.
         if paletteCoordinator.isShowing(.contacts) { return paletteCoordinator.hidePalette() }
         store.prepare()
         // Typed root search is set after this returns, and wins over the recalled name.
         let minutes = core.settings.contactsRecall.rawValue
-        guard typed.isEmpty, let recall, let name = recall.query(at: Date(), minutes: minutes) else {
+        guard typed.isEmpty, let recall, let search = recall.search(at: Date(), minutes: minutes) else {
             return paletteCoordinator.togglePalette(mode: .contacts)
         }
-        paletteCoordinator.togglePalette(mode: .contacts, seeding: name)
-        let rows = ContactSearch.rank(store.cards, query: name)
-        palette.selection = recall.landing(in: rows, query: name) ?? 0
+        paletteCoordinator.togglePalette(mode: .contacts, seeding: search)
+        let rows = ContactSearch.rank(store.cards, query: search)
+        palette.selection = recall.landing(in: rows, query: search) ?? 0
         paletteCoordinator.selectQuery()
     }
 
@@ -97,8 +97,10 @@ final class ContactsCoordinator {
         core.showMessage("Copied \(text)")
     }
 
+    /// The list's search found the card; on its fields screen the query only filters fields.
     private func remember(_ card: ContactCard) {
-        recall = ContactRecall(cardID: card.id, name: card.name, usedAt: Date())
+        let found = palette.mode == .contacts ? palette.query : (recall?.cardID == card.id ? recall?.query : nil)
+        recall = ContactRecall(cardID: card.id, name: card.name, query: found ?? "", usedAt: Date())
     }
 
     /// The fields screen acts on the card it was pushed for.

@@ -63,7 +63,7 @@ struct GeneralSettingsView: View {
                     }
                 } label: {
                     SettingsRowTitle(.generalGeneral, "Remember last contact")
-                    Text("Search Contacts reopens on the card you last used.")
+                    Text("Search Contacts reopens on your last search and card.")
                 }
                 Picker(selection: $settings.escapeKeyBehavior) {
                     ForEach(EscapeKeyBehavior.allCases) { behavior in

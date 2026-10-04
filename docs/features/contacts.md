@@ -28,10 +28,11 @@ locally through the Contacts framework — no network, no copy on disk.
   a launch from the list, where there is no shortcut to press.
 - **A reopen within the Remember window starts on the last card.** Acting on a card (opening it,
   showing its fields, calling, writing, mapping, messaging or copying) records it as a
-  `ContactRecall`. Search Contacts opened within Settings › General › *Remember last contact* (Off,
-  or 1–30 minutes; 5 by default; `general.contactsRecallMinutes` in settings.json) shows that card's
-  name in the search, selected, with the card selected, so typing replaces the name and ⌥⌘A digs
-  straight back in. Root text a hotkey carries in wins over the name; the recall is held in memory
+  `ContactRecall`, with the search that found it. Search Contacts opened within Settings › General ›
+  *Remember last contact* (Off, or 1–30 minutes; 5 by default; `general.contactsRecallMinutes` in
+  settings.json) reopens on that search, selected, with the card selected: the next match is one
+  arrow away, typing replaces the search, and ⌥⌘A digs straight back in. A card picked without a
+  search reopens on its name. Root text a hotkey carries in wins over the name; the recall is held in memory
   only, so a relaunch forgets it. `contacts-test` pins the window's edges.
 - **A field's ↵ is what the field is for.** Call (`tel:`), Write Email (`mailto:`), Show in Maps
   (`maps://?q=`), Open Link; a birthday copies. ⌘↵ always copies the value.
