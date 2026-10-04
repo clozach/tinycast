@@ -164,13 +164,14 @@ final class LauncherCoordinator {
     /// A shortcut fired over a root search hands what was typed to the search screen it opens.
     func runCommandFromHotKey(_ id: CommandID) {
         let typed = paletteCoordinator.isShowing(.launcher) ? core.palette.query : ""
-        runCommand(id)
+        runCommand(id, carrying: typed)
         guard !typed.isEmpty, paletteCoordinator.isVisible, core.palette.mode.searchesTypedText
         else { return }
         core.palette.query = typed
     }
 
-    func runCommand(_ id: CommandID) {
+    /// `typed` is root text a hotkey carries in; from the list it is only the command's name.
+    func runCommand(_ id: CommandID, carrying typed: String = "") {
         switch id {
         case .quickAI:
             core.quickAICoordinator.show()
@@ -196,7 +197,7 @@ final class LauncherCoordinator {
         case .searchFiles:
             fileSearchCoordinator.show()
         case .searchContacts:
-            core.contactsCoordinator.runShortcut()
+            core.contactsCoordinator.runShortcut(carrying: typed)
         case .searchMenuItems:
             menuSearchCoordinator.show()
         case .switchWindows:

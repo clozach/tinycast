@@ -131,6 +131,11 @@ final class PaletteCoordinator {
         hidePalette(restoreFocus: false)
     }
 
+    /// Selects the search text, so typing replaces a query the palette offered rather than typed.
+    func selectQuery() {
+        windowController.selectQueryOnShow()
+    }
+
     /// Reset to the root search now rather than after the Pop to Root Search delay.
     func popToRootNow() {
         windowController.popToRootNow()

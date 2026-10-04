@@ -10,7 +10,7 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
     /// Our key window at summon time, so hiding hands focus back to Settings, not a stale app.
     private(set) weak var previousOwnWindow: NSWindow?
     private var popToRootTimer: Timer?
-    // Reopen beat the timeout, so select the preserved query.
+    // A preserved or recalled query is selected on show, so the first keystroke replaces it.
     private var queryWasPreserved = false
     /// Set by a pop to root while hidden and spent by the next show: that screen is already fresh.
     private(set) var isPoppedToRoot = false
@@ -208,6 +208,12 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
         popToRootTimer?.invalidate()
         popToRootTimer = nil
         popToRoot()
+    }
+
+    /// Selects the search text: now if the palette already has the keyboard, else when it gets it.
+    func selectQueryOnShow() {
+        guard panel?.isKeyWindow == true else { queryWasPreserved = true; return }
+        DispatchQueue.main.async { [weak self] in self?.panel?.selectAllFieldEditorText() }
     }
 
     /// True while a hidden palette still holds pre-close state; consuming cancels the reset.

@@ -73,6 +73,16 @@ struct ContactsTests {
         expect(grace.subtitle == "amazing@navy.example", "without a company the first email or number shows")
         expect(fields.map(\.id) == ["phone-0", "email-1", "address-2"], "field ids follow card order")
 
+        let used = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        let recall = ContactRecall(cardID: "chris", name: chris.name, usedAt: used)
+        expect(recall.query(at: used.addingTimeInterval(299), minutes: 5) == chris.name, "inside the window the name returns")
+        expect(recall.query(at: used.addingTimeInterval(300), minutes: 5) == nil, "the window closes at its last second")
+        expect(recall.query(at: used.addingTimeInterval(10), minutes: 0) == nil, "zero minutes turns recall off")
+        expect(recall.query(at: used.addingTimeInterval(-60), minutes: 5) == nil, "a clock set back recalls nothing")
+        let twins = [wave, ContactCard(id: "other", name: chris.name, organization: "", isCompany: false, fields: []), chris]
+        expect(recall.landing(in: twins, query: chris.name) == 2, "the recalled card wins over a namesake")
+        expect(recall.landing(in: twins, query: "chris") == nil, "an edited search lands as usual")
+
         if failures > 0 {
             print("\(failures) failure(s)")
             exit(1)

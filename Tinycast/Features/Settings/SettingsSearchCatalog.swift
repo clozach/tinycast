@@ -128,6 +128,9 @@ enum SettingsSearchCatalog {
             .generalGeneral, "Pop to Root Search",
             keywords: ["reset", "timeout", "back"]),
         .init(
+            .generalGeneral, "Remember last contact",
+            keywords: ["contacts", "recall", "reopen", "minutes", "last used"]),
+        .init(
             .generalGeneral, "Escape Key Behavior",
             keywords: ["escape", "esc", "back", "close", "navigate"]),
         .init(

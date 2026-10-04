@@ -194,6 +194,7 @@ run index emoji-search-performance \
                            Tinycast/Features/Launcher/Model/SearchRelevance.swift \
                            Tinycast/Platform/AppPaths.swift Tinycast/Platform/Memo.swift
 run contacts-test          Tinycast/Features/Contacts/Model/ContactCard.swift \
+                           Tinycast/Features/Contacts/Model/ContactRecall.swift \
                            Tinycast/Features/Contacts/Model/ContactSearch.swift \
                            Tinycast/Features/Launcher/Model/SearchRelevance.swift
 run palette-selection-test Tinycast/Features/PaletteRowIndex.swift \

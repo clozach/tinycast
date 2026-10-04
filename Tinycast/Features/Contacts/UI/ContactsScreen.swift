@@ -11,6 +11,8 @@ struct ContactsScreen: PaletteScreen {
 
     var primaryActionTitle: String { "Open in Contacts" }
 
+    var landingSelection: Int { core.contactsCoordinator.landing(in: rows, query: vm.query) ?? 0 }
+
     private func card(at selection: Int) -> ContactCard? {
         let rows = rows
         return rows.indices.contains(selection) ? rows[selection] : nil
@@ -29,7 +31,7 @@ struct ContactsScreen: PaletteScreen {
                     contacts.showFields(of: card)
                 },
                 PopoverMenuItem(title: "Copy Name", systemImage: "doc.on.doc", shortcut: "⌘↵") {
-                    contacts.copy(card.name)
+                    contacts.copyName(of: card)
                 },
             ])
     }
@@ -41,7 +43,7 @@ struct ContactsScreen: PaletteScreen {
 
     func secondary(at selection: Int) -> Bool {
         guard let card = card(at: selection) else { return false }
-        core.contactsCoordinator.copy(card.name)
+        core.contactsCoordinator.copyName(of: card)
         return true
     }
 
@@ -111,7 +113,7 @@ struct ContactFieldsScreen: PaletteScreen {
                 shortcut: "↵"
             ) { contacts.run(field) },
             PopoverMenuItem(title: "Copy \(field.label.capitalized)", systemImage: "doc.on.doc", shortcut: "⌘↵") {
-                contacts.copy(field.value)
+                contacts.copy(field)
             },
         ]
         if field.kind == .phone || field.kind == .email {
@@ -131,7 +133,7 @@ struct ContactFieldsScreen: PaletteScreen {
 
     func secondary(at selection: Int) -> Bool {
         guard let field = field(at: selection) else { return false }
-        core.contactsCoordinator.copy(field.value)
+        core.contactsCoordinator.copy(field)
         return true
     }
 

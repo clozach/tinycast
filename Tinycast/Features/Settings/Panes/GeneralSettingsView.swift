@@ -57,6 +57,14 @@ struct GeneralSettingsView: View {
                     SettingsRowTitle(.generalGeneral, "Pop to Root Search")
                     Text("After the launcher closes.")
                 }
+                Picker(selection: $settings.contactsRecall) {
+                    ForEach(ContactRecallWindow.allCases) { window in
+                        Text(window.title).tag(window)
+                    }
+                } label: {
+                    SettingsRowTitle(.generalGeneral, "Remember last contact")
+                    Text("Search Contacts reopens on the card you last used.")
+                }
                 Picker(selection: $settings.escapeKeyBehavior) {
                     ForEach(EscapeKeyBehavior.allCases) { behavior in
                         Text(behavior.title).tag(behavior)

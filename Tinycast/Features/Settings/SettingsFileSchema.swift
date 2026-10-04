@@ -31,6 +31,7 @@ enum SettingsFileSchema {
         switch key {
         case .showInMenuBar: return bind(settings, \.showInMenuBar)
         case .popToRootTimeout: return bind(settings, \.popToRootTimeout)
+        case .contactsRecall: return bind(settings, \.contactsRecall)
         case .escapeKeyBehavior: return bind(settings, \.escapeKeyBehavior)
         case .autoSwitchInputSource: return bind(settings, \.autoSwitchInputSourceID)
         case .supportReminders: return bind(settings, \.supportRemindersEnabled)
@@ -133,6 +134,7 @@ extension ClipboardDefaultAction: SettingsFileRawValue {}
 extension EmojiSkinTone: SettingsFileRawValue {}
 extension EmojiGridColumns: SettingsFileRawValue {}
 extension JoinWindow: SettingsFileRawValue {}
+extension ContactRecallWindow: SettingsFileRawValue {}
 
 extension ClipboardRetention: SettingsFileToken {
     var settingsToken: SettingsFileJSON {

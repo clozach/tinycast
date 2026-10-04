@@ -600,6 +600,7 @@
 		C7468FBE50BAEC5084D4DB17 /* AIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848E14DE51403235A82BC287 /* AIProvider.swift */; };
 		C75868B7FBA96939089EDBA6 /* CustomWindowSizesSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F81A385A824D02C1466F8BF8 /* CustomWindowSizesSection.swift */; };
 		C890F517AA487C4C6CD25298 /* MathNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E140AF0EE4548DDC4814D7 /* MathNode.swift */; };
+		C8B6EB097D3E933C3ACB7AB6 /* ContactRecall.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C4026B300C21A831A98F84 /* ContactRecall.swift */; };
 		C8D4DDD0DDA678429552E062 /* MCPOAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222F9EE432F608B5C907E7C2 /* MCPOAuth.swift */; };
 		C9A7290682E9D0881713C009 /* ExtensionGridGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85C82C66132C7723272E873 /* ExtensionGridGeometry.swift */; };
 		CA1BE30F0E4843354941A987 /* SettingsFileIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA16A82218236B882496E6DD /* SettingsFileIdentity.swift */; };
@@ -1202,6 +1203,7 @@
 		83CD7B0E866AEF486F9EC5E9 /* QuicklinkCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuicklinkCoordinator.swift; sourceTree = "<group>"; };
 		847C792F7F5F31259EB56ACC /* FileSearchScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSearchScreen.swift; sourceTree = "<group>"; };
 		848E14DE51403235A82BC287 /* AIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProvider.swift; sourceTree = "<group>"; };
+		84C4026B300C21A831A98F84 /* ContactRecall.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactRecall.swift; sourceTree = "<group>"; };
 		856F65245B10433A230194E6 /* QuicklinkListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuicklinkListView.swift; sourceTree = "<group>"; };
 		858E08BB313EC330C2D5E50C /* LauncherCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherCoordinator.swift; sourceTree = "<group>"; };
 		85B00A698366E83C7352BC1E /* HotKeyBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyBinding.swift; sourceTree = "<group>"; };
@@ -2103,6 +2105,7 @@
 			isa = PBXGroup;
 			children = (
 				7415E78F7CD1641518F61769 /* ContactCard.swift */,
+				84C4026B300C21A831A98F84 /* ContactRecall.swift */,
 				028B995430527ED82E358BD3 /* ContactSearch.swift */,
 			);
 			path = Model;
@@ -3805,6 +3808,7 @@
 				1545F0D79421A893EA104C3A /* CompactFavoritesRow.swift in Sources */,
 				48993DEAD8CFE4BD89EF6760 /* ContactCard.swift in Sources */,
 				BA131EA5D4D1393FA7D2AF6E /* ContactList.swift in Sources */,
+				C8B6EB097D3E933C3ACB7AB6 /* ContactRecall.swift in Sources */,
 				67479AFDD544E2D9AEF0BC58 /* ContactSearch.swift in Sources */,
 				EE352AB7DAECFDD3CFEFFD06 /* ContactsAccess.swift in Sources */,
 				1B5293DA33C5BE252341FDF6 /* ContactsCoordinator.swift in Sources */,

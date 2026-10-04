@@ -18,6 +18,27 @@ enum PopToRootTimeout: Int, CaseIterable, Identifiable, Sendable {
     var interval: TimeInterval { TimeInterval(rawValue) }
 }
 
+/// How long a reopened Search Contacts offers back the card last acted on.
+enum ContactRecallWindow: Int, CaseIterable, Identifiable, Sendable {
+    case off = 0
+    case one = 1
+    case two = 2
+    case five = 5
+    case ten = 10
+    case fifteen = 15
+    case thirty = 30
+
+    var id: Int { rawValue }
+
+    var title: String {
+        switch self {
+        case .off: return "Off"
+        case .one: return "For 1 minute"
+        default: return "For \(rawValue) minutes"
+        }
+    }
+}
+
 /// How early the join card appears, and how long past the start it stays. See UpcomingWindow.
 enum JoinWindow: Int, CaseIterable, Identifiable, Sendable {
     case one = 1
@@ -200,6 +221,11 @@ final class AppSettings {
     /// How long a closed palette keeps its state before popping back to the root launcher.
     var popToRootTimeout: PopToRootTimeout {
         didSet { defaults.set(popToRootTimeout.rawValue, forKey: Key.popToRootTimeout.rawValue) }
+    }
+
+    /// How long Search Contacts reopens on the card last acted on. See docs/features/contacts.md.
+    var contactsRecall: ContactRecallWindow {
+        didSet { defaults.set(contactsRecall.rawValue, forKey: Key.contactsRecallMinutes.rawValue) }
     }
 
     /// Whether Escape walks back through the screens the palette opened, or just closes it.
@@ -621,6 +647,12 @@ final class AppSettings {
         popToRootTimeout =
             PopToRootTimeout(rawValue: defaults.integer(forKey: Key.popToRootTimeout.rawValue))
             ?? .immediately
+        // Absent reads as the default, not as Off: `integer(forKey:)` would say 0.
+        contactsRecall =
+            defaults.object(forKey: Key.contactsRecallMinutes.rawValue) == nil
+            ? .five
+            : ContactRecallWindow(rawValue: defaults.integer(forKey: Key.contactsRecallMinutes.rawValue))
+                ?? .five
         escapeKeyBehavior =
             defaults.string(forKey: Key.escapeKeyBehavior.rawValue).flatMap(EscapeKeyBehavior.init)
             ?? .navigateBackOrClose

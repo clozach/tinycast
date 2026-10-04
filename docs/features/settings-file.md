@@ -84,6 +84,7 @@ because the app rewrites the file.
   "general": {
     "showInMenuBar": true,
     "popToRootSeconds": 0,
+    "contactsRecallMinutes": 5,
     "escapeKeyBehavior": "navigateBackOrClose",
     "autoSwitchInputSource": null,
     "supportReminders": true

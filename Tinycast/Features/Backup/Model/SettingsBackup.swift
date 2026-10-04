@@ -33,6 +33,7 @@ struct SettingsBackup: Codable {
         var emojiInSearchResults: Bool?
         var showInMenuBar: Bool?
         var popToRootSeconds: Int?
+        var contactsRecallMinutes: Int?
         var escapeKeyBehavior: String?
         var appearance: String?
         var calcNumberStyle: String?
@@ -144,6 +145,7 @@ extension SettingsBackup {
             emojiInSearchResults: s.emojiInSearchResults,
             showInMenuBar: s.showInMenuBar,
             popToRootSeconds: s.popToRootTimeout.rawValue,
+            contactsRecallMinutes: s.contactsRecall.rawValue,
             escapeKeyBehavior: s.escapeKeyBehavior.rawValue,
             appearance: s.appearance.rawValue,
             calcNumberStyle: s.calcNumberStyle.rawValue,
@@ -349,6 +351,10 @@ extension SettingsBackup {
         }
         if let secs = s.popToRootSeconds, let timeout = PopToRootTimeout(rawValue: secs) {
             settings.popToRootTimeout = timeout
+            count += 1
+        }
+        if let minutes = s.contactsRecallMinutes, let window = ContactRecallWindow(rawValue: minutes) {
+            settings.contactsRecall = window
             count += 1
         }
         if let raw = s.escapeKeyBehavior, let behavior = EscapeKeyBehavior(rawValue: raw) {
