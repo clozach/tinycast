@@ -8,6 +8,23 @@ enum ASCIIKeyboardLayout {
         withCurrentLayout { character(for: keyCode, modifiers: modifiers, in: $0) }
     }
 
+    /// The key a hotkey's key code types: a named key (⎋ ↩ ⇥ space ⌫ arrows) or the layout's character.
+    @MainActor static func keyEquivalent(forKeyCode keyCode: Int) -> KeyEquivalent? {
+        switch keyCode {
+        case kVK_Escape: return .escape
+        case kVK_Return: return .return
+        case kVK_Tab: return .tab
+        case kVK_Space: return .space
+        case kVK_Delete: return .delete
+        case kVK_ForwardDelete: return .deleteForward
+        case kVK_UpArrow: return .upArrow
+        case kVK_DownArrow: return .downArrow
+        case kVK_LeftArrow: return .leftArrow
+        case kVK_RightArrow: return .rightArrow
+        default: return character(for: keyCode)?.first.map { KeyEquivalent($0) }
+        }
+    }
+
     /// Every key's base character, translated against one lookup of the layout.
     @MainActor static func baseCharacters(for keyCodes: Range<Int>) -> [Int: String] {
         withCurrentLayout { layout in

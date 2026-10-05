@@ -89,7 +89,7 @@ final class ExtensionCoordinator {
     private func dispatchOwnChord(_ entryID: String) -> Bool {
         guard case .rendered(let tree) = extensions.state,
             let shortcut = core.hotKeys.binding(for: .extensionCommand(entryID: entryID))?.shortcut,
-            let character = ASCIIKeyboardLayout.character(for: shortcut.carbonKeyCode)?.first
+            let key = ASCIIKeyboardLayout.keyEquivalent(forKeyCode: shortcut.carbonKeyCode)
         else { return false }
         let screen = ExtensionScreen(tree: tree, query: palette.query)
         let selection = min(max(palette.selection, 0), max(screen.items.count - 1, 0))
@@ -99,7 +99,6 @@ final class ExtensionCoordinator {
         if flags.contains(.option) { modifiers.insert(.option) }
         if flags.contains(.control) { modifiers.insert(.control) }
         if flags.contains(.shift) { modifiers.insert(.shift) }
-        let key = KeyEquivalent(character)
         guard
             let handler = ExtensionScreen.actions(in: screen.actionPanel(forItemAt: selection))
                 .first(where: { $0.matches(key: key, modifiers: modifiers) })?.handler

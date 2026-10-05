@@ -3,7 +3,7 @@
 `Search Contacts` lists every card in Contacts and ranks it by the query (`.contacts`). Its own
 shortcut, pressed again on a card, replaces the list with that card's fields (`.contactFields`): one
 key digs one level deeper, the way LaunchBar's contact search does, and the way Unimagic's second
-⌥⌘G opens its skin tones. Escape walks back to the list with its search intact. Everything is read
+⌃⌘⎋ opens its skin tones. Escape walks back to the list with its search intact. Everything is read
 locally through the Contacts framework — no network, no copy on disk.
 
 ## Invariants
