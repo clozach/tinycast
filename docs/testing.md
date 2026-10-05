@@ -112,6 +112,7 @@ If a change touches anything in the right column, the harness on the left is man
 | `emoji-test` | `Emoji/Model/EmojiCatalog.swift`, `EmojiGridGeometry.swift`, the generated data and keyword packs |
 | `emoji-search-test` | `Emoji/Service/EmojiIndex.swift`, `FrequentEmojiStore.swift`, `Scripts/gen-emoji.js`'s keyword format, multilingual search |
 | `emoji-root-search-test` | Shared app/emoji ranking, KM learning in both directions, aliases, synonyms, colon names, localized keywords, full candidate pool, reset and persistence |
+| `palette-horizontal-arrow-test` | `Palette/PaletteHorizontalArrow.swift` — which ←/→ presses step a grid and which go to the search caret |
 | `palette-navigation-test` | `Palette/PaletteState.swift`'s screen motions — `prepare`, `replace`, `push`, `pop` |
 | `palette-selection-test` | `Features/PaletteRowIndex.swift` |
 | `interface-size-test` | `DesignSystem/InterfaceMetrics.swift`, `Features/Settings/InterfaceSize.swift`, `Extensions/Model/ExtensionFormMetrics.swift` |

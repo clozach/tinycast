@@ -534,9 +534,16 @@ whether macOS has claimed the chord, before assuming the handler is wrong.
 
 ## Emacs navigation chords
 
-⌃N/⌃P and ⌃F/⌃B navigate exactly as ↓/↑ and →/← do — on the emoji grid all four step the selection,
-and everywhere else the horizontal pair falls through to the caret, which is what a native search field
-does.
+⌃N/⌃P and ⌃F/⌃B navigate exactly as ↓/↑ and →/← do — on a grid (emoji, or an extension's Grid such as
+Unimagic) all four step the selection, and everywhere else the horizontal pair falls through to the
+caret, which is what a native search field does.
+
+**On a grid the caret still gets every horizontal press the grid cannot use.** `PaletteHorizontalArrow`
+decides it, covered by `Tests/palette-horizontal-arrow-test.swift`: ⌘←/⌘→, ⌥←/⌥→, ⇧← and every other
+modified arrow always go to the search field (line start or end, by word, extend the selection), and a
+plain ←/→ that cannot leave its cell — ← on the first tile, → on the last — goes to the caret instead
+of being swallowed. Before 2026-10-05 the grid claimed every ←/→ whatever its modifiers and clamped at
+its ends, so with the first tile selected ← and ⌘← did nothing while the caret blinked.
 
 None of them reach `onKeyPress` on their own: AppKit's key-binding table hands the field editor
 `moveDown:` / `moveUp:` / `moveForward:` / `moveBackward:` first, and in a one-line field the vertical

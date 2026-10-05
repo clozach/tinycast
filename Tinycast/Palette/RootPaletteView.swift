@@ -505,15 +505,11 @@ struct RootPaletteView: View {
                 return moveVertically(-1)
             }
             // Horizontal arrows step the grid; elsewhere they stay with the caret.
-            .onKeyPress(.leftArrow) {
+            .onKeyPress(keys: [.leftArrow, .rightArrow], phases: [.down, .repeat]) { press in
                 if vm.isControlListOpen { return .ignored }
                 if menuOpen { return .handled }
-                return moveHorizontally(-1) ? .handled : .ignored
-            }
-            .onKeyPress(.rightArrow) {
-                if vm.isControlListOpen { return .ignored }
-                if menuOpen { return .handled }
-                return moveHorizontally(1) ? .handled : .ignored
+                let delta = press.key == .leftArrow ? -1 : 1
+                return moveHorizontally(delta, modifiers: press.modifiers) ? .handled : .ignored
             }
             // Plain ↵ runs an open menu's row or non-form selection; ⌘↵ submits forms.
             .onKeyPress(keys: [.return, KeyEquivalent("\u{3}")], phases: .down) { press in
@@ -1268,11 +1264,14 @@ struct RootPaletteView: View {
     }
 
     /// ←/→: consumed only by a horizontally navigating screen, else the caret keeps them.
-    private func moveHorizontally(_ delta: Int) -> Bool {
+    private func moveHorizontally(_ delta: Int, modifiers: SwiftUI.EventModifiers) -> Bool {
         let screen = screen
-        guard let next = screen.move(delta, axis: .horizontal, from: selection(in: screen)) else {
-            return false
-        }
+        let current = selection(in: screen)
+        let target = screen.move(delta, axis: .horizontal, from: current)
+        guard
+            PaletteHorizontalArrow.stepsSelection(modifiers: modifiers, from: current, to: target),
+            let next = target
+        else { return false }
         vm.selection = next
         scroll = ScrollIntent(kind: .follow)
         return true
