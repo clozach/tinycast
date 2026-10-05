@@ -22,7 +22,8 @@ export function unsupported(what) {
 
 export const Clipboard = {
   copy: (content, options) => hostCall("clipboard", "copy", [normalizeClipboardContent(content), options ?? {}]),
-  paste: (content) => hostCall("clipboard", "paste", [normalizeClipboardContent(content)]),
+  // Tinycast extension: `{ keepWindowOpen: true }` pastes without closing the palette.
+  paste: (content, options) => hostCall("clipboard", "paste", [normalizeClipboardContent(content), options ?? {}]),
   clear: () => hostCall("clipboard", "clear", []),
   read: (options) => hostCall("clipboard", "read", [options ?? {}]),
   readText: (options) => hostCall("clipboard", "readText", [options ?? {}]),

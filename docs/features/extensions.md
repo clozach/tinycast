@@ -668,6 +668,11 @@ interval floor instead of sixty.
 `openExtensionPreferences`,
 `useNavigation`, `OAuth`, `Icon`, `Color`, `Image.Mask`, `Keyboard.Shortcut.Common`, `LaunchType`.
 
+**Tinycast additions** — `Clipboard.paste(text, { keepWindowOpen: true })` pastes into the app the palette
+came from without closing the palette, for a run of pastes (Raycast ignores the second argument). A
+⌘-click on a list row or grid tile runs that item's ⌘↵ action, as the keyboard would; with no ⌘↵ action it
+falls back to the primary action.
+
 **OAuth 2.0 PKCE** — `OAuth.PKCEClient`, `OAuth.TokenSet`, `OAuth.RedirectMethod`, with S256 challenges and
 tokens in the login Keychain (service `com.tinycast.extensions.oauth`, `kSecAttrAccessibleWhenUnlocked`),
 scoped per extension and dropped on uninstall.

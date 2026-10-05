@@ -209,6 +209,9 @@ final class ExtensionHostBridge: ExtensionHostAPI {
                 } else {
                     Paster.copyPlainText(text)
                 }
+            } else if options["keepWindowOpen"]?.boolValue == true {
+                // A Tinycast extension to the API: the palette stays up for a run of pastes.
+                Paster.pasteStringInPlace(text, into: context?.pasteTarget)
             } else {
                 Paster.pasteString(text, previousApp: context?.pasteTarget)
             }

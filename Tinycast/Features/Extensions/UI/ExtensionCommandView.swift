@@ -9,6 +9,7 @@ struct ExtensionCommandView: View {
     let scroll: ScrollIntent
     let onSelect: (Int) -> Void
     let onActivate: (Int) -> Void
+    let onCommandActivate: (Int) -> Void
     let onActions: (Int) -> Void
     let onFieldChange: (RenderNode, Any) -> Void
 
@@ -32,7 +33,7 @@ struct ExtensionCommandView: View {
                 ExtensionListView(
                     screen: screen, selection: selection, assetsPath: assetsPath,
                     scroll: scroll, onSelect: onSelect, onActivate: onActivate,
-                    onActions: onActions)
+                    onCommandActivate: onCommandActivate, onActions: onActions)
             case .detail:
                 ExtensionDetailBody(
                     markdown: screen.root?.string("markdown"),

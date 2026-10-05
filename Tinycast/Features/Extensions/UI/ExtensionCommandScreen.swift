@@ -226,6 +226,11 @@ struct ExtensionCommandScreen: PaletteScreen {
                 scroll: scroll,
                 onSelect: { vm.selection = $0 },
                 onActivate: { activate(at: $0) },
+                onCommandActivate: { index in
+                    if !dispatchShortcut(key: .return, modifiers: .command, at: index) {
+                        activate(at: index)
+                    }
+                },
                 onActions: { index in
                     vm.selection = index
                     openActions()

@@ -11,6 +11,8 @@ struct ExtensionListView: View {
     let scroll: ScrollIntent
     let onSelect: (Int) -> Void
     let onActivate: (Int) -> Void
+    /// ⌘-click: the item's ⌘↵ action, as the keyboard would run it.
+    var onCommandActivate: ((Int) -> Void)?
     let onActions: (Int) -> Void
 
     private static let detailListWidth: CGFloat = 290
@@ -77,10 +79,7 @@ struct ExtensionListView: View {
                                 assetsPath: assetsPath, compact: screen.showsDetail
                             )
                             .contentShape(Rectangle())
-                            .onTapGesture {
-                                onSelect(item.index)
-                                onActivate(item.index)
-                            }
+                            .onTapGesture { click(item.index) }
                             .onRightClick { onActions(item.index) }
                             .selectionFrame(item.index == selection)
                         }
@@ -96,6 +95,15 @@ struct ExtensionListView: View {
             .thinScrollbar()
             .scrollFollowsSelection(
                 scroll, row: selectedRowID, atOrigin: selection == 0, proxy: proxy)
+        }
+    }
+
+    private func click(_ index: Int) {
+        onSelect(index)
+        if NSEvent.modifierFlags.contains(.command), let onCommandActivate {
+            onCommandActivate(index)
+        } else {
+            onActivate(index)
         }
     }
 
@@ -134,10 +142,7 @@ struct ExtensionListView: View {
                                     onHover: { onSelect(item.index) }
                                 )
                                 .contentShape(Rectangle())
-                                .onTapGesture {
-                                    onSelect(item.index)
-                                    onActivate(item.index)
-                                }
+                                .onTapGesture { click(item.index) }
                                 .onRightClick { onActions(item.index) }
                                 .selectionFrame(item.index == selection)
                             }
