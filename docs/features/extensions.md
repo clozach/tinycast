@@ -584,7 +584,7 @@ root search with text typed, the command opens already searching that text — t
 while its command is showing, the shortcut closes it — unless the selected item has an action whose
 own `shortcut` is that same chord, which then runs instead. A global chord never reaches the
 palette's key handlers, so this is how a command reuses its own hotkey (Unimagic opens its skin-tone
-picker on a second ⌃⌘⎋); `ExtensionCoordinator.dispatchOwnChord` does the matching. The chord's key may be a
+picker on a second ⌥⌘Space); `ExtensionCoordinator.dispatchOwnChord` does the matching. The chord's key may be a
 named key (⎋ ↩ ⇥ space ⌫ arrows) as well as a character: `ASCIIKeyboardLayout.keyEquivalent(forKeyCode:)`.
 
 Its index is not pruned at launch the way the UUID-keyed ones are: the installed set is scanned
