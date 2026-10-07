@@ -6,6 +6,10 @@ key digs one level deeper, the way LaunchBar's contact search does, and the way 
 ⌃⌘Space opens its skin tones. Escape walks back to the list with its search intact. Everything is read
 locally through the Contacts framework — no network, no copy on disk.
 
+Release the shortcut's modifiers before invoking it again to open fields. If the first chord opened
+the hidden palette and its modifiers stay continuously held, repeating it instead enters the
+[application switcher](app-switcher.md).
+
 ## Invariants
 
 - **Access is asked on first use, never at launch.** `ContactsStore.prepare()` runs each time the

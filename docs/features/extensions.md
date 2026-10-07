@@ -587,6 +587,10 @@ palette's key handlers, so this is how a command reuses its own hotkey (Unimagic
 picker on a second ⌃⌘Space); `ExtensionCoordinator.dispatchOwnChord` does the matching. The chord's key may be a
 named key (⎋ ↩ ⇥ space ⌫ arrows) as well as a character: `ASCIIKeyboardLayout.keyEquivalent(forKeyCode:)`.
 
+That command action uses a fresh invocation. After a chord opens the hidden palette, repeating its
+trigger with the modifiers continuously held enters the [application switcher](app-switcher.md) first.
+Release the modifiers between invocations to retain the command's normal second-invocation action.
+
 Its index is not pruned at launch the way the UUID-keyed ones are: the installed set is scanned
 asynchronously and only while extensions are on, so at launch "not installed yet" and "gone" look
 identical, and pruning there would quietly drop a working binding. Uninstalling clears its own instead,
