@@ -15,6 +15,7 @@ extension View {
         self
             .modifier(InterfaceMetricsScope(settings: core.settings))
             .environment(core)
+            .environment(core.appSwitchCoordinator)
             .environment(core.settings)
             .environment(core.palette)
             .environment(core.appIndex)

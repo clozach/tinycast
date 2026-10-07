@@ -14,6 +14,7 @@ final class PaletteCoordinator {
     var onLauncherShown: (() -> Void)?
     /// Screens that snapshot other apps re-read them on every open, a restored one included.
     var onScreenOpening: ((PaletteMode) -> Void)?
+    var onHiding: (() -> Void)?
 
     init(
         palette: PaletteState,
@@ -120,6 +121,7 @@ final class PaletteCoordinator {
     }
 
     func hidePalette(restoreFocus: Bool = true) {
+        onHiding?()
         fileSearch.cancel()
         menuSearch.reset()
         windowSwitch.reset()

@@ -21,9 +21,11 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
     private let dropGuides = PaletteDropGuideController()
     /// ⌘V: `Edit ▸ Paste` claims it before `sendEvent` whenever the board also carries text.
     private var pasteMonitor: Any?
+    private var appSwitchMonitor: Any?
     /// ⌘⎋: the window server claims it, so no keystroke is left for the responder chain to see.
     private lazy var commandEscapeTap = CommandEscapeTap { [weak self] in
         guard let self, self.panel?.isKeyWindow == true else { return false }
+        if self.core.appSwitchCoordinator.escapeWhileSwitching() { return true }
         self.core.palette.prepare(mode: .launcher)
         return true
     }
@@ -104,6 +106,7 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
     // Isolated so teardown may touch the main-actor monitor; the block is already weak.
     isolated deinit {
         if let pasteMonitor { NSEvent.removeMonitor(pasteMonitor) }
+        if let appSwitchMonitor { NSEvent.removeMonitor(appSwitchMonitor) }
     }
 
     /// The character a bare-⌘ chord names, through the ASCII layout so an IME cannot move it.
@@ -403,6 +406,12 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
             return true
         }
         installPasteMonitor()
+        appSwitchMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.keyDown, .keyUp, .flagsChanged, .leftMouseDown, .rightMouseDown, .otherMouseDown, .scrollWheel]
+        ) { [weak self] event in
+            guard let self, self.panel?.isKeyWindow == true else { return event }
+            return self.core.appSwitchCoordinator.handle(event) ? nil : event
+        }
         // Handled at the panel: a focused preview answers Escape before the palette's own handler.
         panel.onEscape = { [weak self] in
             guard let self, core.palette.fileSearchQuickLook else { return false }

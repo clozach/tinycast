@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootPaletteView: View {
     @Environment(AppCore.self) private var core
+    @Environment(AppSwitchCoordinator.self) private var appSwitch
     @Environment(PaletteState.self) private var vm
     @Environment(AppIndex.self) private var appIndex
     @Environment(ClipboardStore.self) private var store
@@ -79,6 +80,8 @@ struct RootPaletteView: View {
                 session: menuSearch, core: core, vm: vm, openActions: openActions)
         case .switchWindows:
             return WindowSwitchScreen(session: windowSwitch, core: core)
+        case .switchApps:
+            return AppSwitchScreen(coordinator: appSwitch)
         case .rooms:
             return RoomsScreen(coordinator: core.roomCoordinator, session: core.roomSession, vm: vm)
         case .roomWindows:
@@ -380,10 +383,15 @@ struct RootPaletteView: View {
             .onChange(of: vm.focusToken) {
                 searchFocused = !screen.hidesSearchField
             }
+            .onChange(of: vm.isComposing) {
+                if vm.isComposing { appSwitch.activity() }
+            }
             // A preserved screen re-summons as it was left, so a menu must end with the palette.
             .modifier(PaletteHideObserver { if menuOpen { closeMenus() } })
             .onChange(of: vm.query) {
                 if vm.collapseQueryLineBreaks() { return }
+                appSwitch.queryChanged()
+                if appSwitch.restoresHiddenPalette { return }
                 land()
                 if vm.mode == .fileSearch { fileSearch.search(vm.query, filter: vm.fileSearchFilter) }
                 if vm.mode == .dictionary { dictionary.lookUp(vm.query) }
@@ -408,6 +416,13 @@ struct RootPaletteView: View {
                 fileSearch.search(vm.query, filter: vm.fileSearchFilter)
             }
             .onChange(of: vm.mode) {
+                if vm.mode == .switchApps || appSwitch.restoresHiddenPalette {
+                    searchFocused = !screen.hidesSearchField
+                    return
+                }
+                if vm.mode != .switchApps, appSwitch.releasesToActivate {
+                    appSwitch.activity()
+                }
                 vm.clipboardFilter = .all
                 vm.fileSearchFilter = .all
                 vm.emojiCategoryFilter = .all
@@ -434,7 +449,8 @@ struct RootPaletteView: View {
                 if vm.mode != .meetingDetails { calendarStore.clearDetails() }
                 if vm.mode != .rooms, vm.mode != .roomWindows { core.roomCoordinator.screensDidClose() }
                 // Leaving the screen any other way than Escape still ends the command's session.
-                if vm.mode != .extensionCommand, extensions.running != nil, !extensions.isAuthorizing {
+                if vm.mode != .extensionCommand, vm.mode != .switchApps,
+                    extensions.running != nil, !extensions.isAuthorizing {
                     Task { await extensions.stop() }
                 }
             }
@@ -1235,6 +1251,7 @@ struct RootPaletteView: View {
 
     /// Every reset lands here, so handlers that fire together agree in whatever order they run.
     private func land() {
+        if appSwitch.restoresHiddenPalette { return }
         let landing = screen.landingSelection
         vm.selection = landing
         scroll = ScrollIntent(kind: landing == 0 ? .top : .center)

@@ -52,6 +52,7 @@ final class AppCore {
     let frequentEmoji = FrequentEmojiStore()
     let pinnedEmoji = PinnedEmojiStore()
     let runningApps = RunningAppsMonitor()
+    let appRecency = AppRecencyMonitor()
     let palette = PaletteState()
     let fileSearch = FileSearchSession()
     let dictionary = DictionarySession()
@@ -102,6 +103,8 @@ final class AppCore {
         fileSearch: fileSearch, menuSearch: menuSearch, windowSwitch: windowSwitch,
         windowController: windowController)
     @ObservationIgnored private(set) lazy var sendToCoordinator = SendToCoordinator(core: self)
+    @ObservationIgnored private(set) lazy var appSwitchCoordinator = AppSwitchCoordinator(
+        core: self, recency: appRecency)
     /// Its own window and lifecycle: neither coordinator shows or closes the other's surface.
     @ObservationIgnored private(set) lazy var settingsCoordinator = SettingsCoordinator(core: self)
     @ObservationIgnored private(set) lazy var onboardingCoordinator = OnboardingCoordinator(
@@ -343,6 +346,10 @@ final class AppCore {
             snippetListener.healthTicker = healthTicker
 
             hotKeys.onTogglePalette = { [weak self] in self?.paletteCoordinator.togglePalette() }
+            hotKeys.beforePerform = { [weak self] in self?.appSwitchCoordinator.beforeHotKey($0) ?? false }
+            hotKeys.afterPerform = { [weak self] in self?.appSwitchCoordinator.afterHotKey($0) }
+            hotKeys.onRelease = { [weak self] in self?.appSwitchCoordinator.hotKeyReleased($0) }
+            paletteCoordinator.onHiding = { [weak self] in self?.appSwitchCoordinator.paletteWillHide() }
             hotKeys.onRunCommand = { [weak self] id in self?.launcherCoordinator.runCommandFromHotKey(id) }
             hotKeys.onRunCustomCommand = { [weak self] id in
                 self?.customCommandCoordinator.runCustomCommand(id: id)

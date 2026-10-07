@@ -5,6 +5,9 @@ import Foundation
 @Observable
 final class HotKeyManager {
     var onTogglePalette: (() -> Void)?
+    var beforePerform: ((HotKeyAction) -> Bool)?
+    var afterPerform: ((HotKeyAction) -> Void)?
+    var onRelease: ((HotKeyAction) -> Void)?
     /// The launcher's own command funnel, so a shortcut and a palette row run the same thing.
     var onRunCommand: ((CommandID) -> Void)?
     var onRunCustomCommand: ((UUID) -> Void)?
@@ -288,9 +291,10 @@ final class HotKeyManager {
     /// Hands a combo to Carbon; a modifier-only binding has no per-action registration.
     private func register(_ action: HotKeyAction) {
         guard let shortcut = binding(for: action)?.shortcut else { return }
-        center.register(id: action.defaultsKey, shortcut: shortcut) { [weak self] in
-            self?.perform(action)
-        }
+        center.register(
+            id: action.defaultsKey, shortcut: shortcut,
+            onKeyDown: { [weak self] in self?.perform(action) },
+            onKeyUp: { [weak self] in self?.onRelease?(action) })
     }
 
     /// Rebuilt wholesale, so the map can't drift from what is on disk.
@@ -304,8 +308,10 @@ final class HotKeyManager {
     }
 
     private func perform(_ action: HotKeyAction) {
+        if beforePerform?(action) == true { return }
         // The category switch, the way each feature switch already guards its own funnel.
         guard allowsAction?(action) ?? true else { return }
+        defer { afterPerform?(action) }
         switch action {
         case .togglePalette: onTogglePalette?()
         case .command(let id): onRunCommand?(id)

@@ -21,6 +21,10 @@ as its `fallbackText` (see [extensions.md](extensions.md#shortcuts)). The screen
 Escape walks back to the root search with the text intact. Launching the same command from the
 list does not carry anything: there the typed text is the command's name.
 
+**A continuously held chord can switch applications.** After a chord opens the hidden palette,
+repeat its trigger key without releasing the modifiers to enter the [application switcher](app-switcher.md).
+Fresh invocations and modifier-only bindings keep their ordinary behavior.
+
 ## Invariants
 
 - **Hotkeys persist as JSON strings under `hotkey.<action>` UserDefaults keys**, and
@@ -31,7 +35,8 @@ list does not carry anything: there the typed text is the command's name.
   new built-in command arrives bindable with no hotkey plumbing of its own, and there is one behaviour
   per command rather than one per invocation route.
 - **A command that opens a palette mode toggles it.** Every one of them enters through
-  `PaletteCoordinator.togglePalette(mode:)`, so a second press closes what the first opened. From a
+  `PaletteCoordinator.togglePalette(mode:)`, so a fresh second invocation closes what the first opened.
+  A continuously held repeated trigger enters application switching first. From a
   launcher row the palette is in `.launcher`, so the row always re-points instead.
 - **`HotKeyBinding` is the one thing an action is bound to, with four cases and two engines.** A
   `.combo` is a Carbon registration; `.doubleTap`, `.globe` and `.doubleGlobe` are recognized by

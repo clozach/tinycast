@@ -106,6 +106,23 @@ struct PaletteNavigationTests {
             hopped.pop() && hopped.mode == .launcher && hopped.query == "clipboard",
             "and the screen it crossed from is the step back")
 
+        let switching = searchingLauncher()
+        switching.push(mode: .emoji)
+        switching.query = "heart"
+        switching.selection = 4
+        switching.emojiCategoryFilter = .pinned
+        switching.emojiGridColumnsOverride = .six
+        switching.pushCarryingQuery(mode: .switchApps)
+        switching.query = ""
+        switching.selection = 0
+        expect(switching.pop(preservingScreenState: true), "the temporary app list has a return frame")
+        expect(switching.mode == .emoji && switching.query == "heart" && switching.selection == 4,
+            "closing app switching restores the prior query and selected item")
+        expect(switching.emojiCategoryFilter == .pinned && switching.emojiGridColumnsOverride == .six,
+            "the temporary app list does not reset the underlying screen's filters or zoom")
+        expect(switching.pop() && switching.mode == .launcher && switching.query == "clipboard",
+            "app switching leaves the underlying navigation stack intact")
+
         let chatted = searchingLauncher()
         chatted.push(mode: .ai)
         chatted.query = "why is the sky blue"

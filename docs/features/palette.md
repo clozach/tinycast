@@ -65,12 +65,14 @@ SwiftUI search field re-focuses. `prepare` is one of four motions over the scree
 [Navigation](#navigation).
 
 Hiding schedules Pop to Root Search, and `PaletteWindowController.popToRoot` is its only path: the
-palette returns to the launcher *and* chat starts a new conversation, at once or after
+palette returns to the launcher, at once or after
 `popToRootTimeout`, unless a re-summon inside that window consumes the pending reset first. An
-unfinished chat is a thing being done, exactly like a typed query, so the screen and the conversation
-are reset together rather than the screen alone. A reply still streaming is the one exception — it was
-asked for, and resetting would throw the answer away. Nothing is lost either way: a conversation is
-written to Chat History, and the AI Chat window's sidebar, as soon as it has a message.
+AI conversation has its own lifetime, governed by AI's **Opens To** and **Start a new conversation
+after** preferences; resetting the palette does not reset its transcript. See [AI](ai.md).
+
+Repeating the initial trigger while continuously holding its modifiers temporarily pushes the
+[application switcher](app-switcher.md). Hiding that list restores the prior palette frame, then starts
+the same Pop to Root Search timer. Ordinary activity cancels its release-to-activate gesture.
 
 Each `PaletteMode` maps to one type conforming to `PaletteScreen`, and the protocol is what keeps the
 selection invariant honest: a screen exposes `rows` as its single source of visible order, and the
@@ -92,6 +94,7 @@ every screen but the clipboard, which lands past its pins
 | `.clipboard` | `ClipboardScreen` | `ClipboardList` + preview |
 | `.calculatorHistory` | `CalculatorHistoryScreen` | `CalculatorHistoryList` |
 | `.emoji` | `EmojiScreen` | `EmojiGridView` |
+| `.switchApps` | `AppSwitchScreen` | `AppSwitchList` (see [app-switcher.md](app-switcher.md)) |
 | `.fileSearch` | `FileSearchScreen` | `FileSearchList` (see [file-search.md](file-search.md)) |
 | `.schedule` | `ScheduleScreen` | `ScheduleList` (see [calendar.md](calendar.md)) |
 | `.meetingDetails` | `MeetingDetailsScreen` | `MeetingDetailsView` (see [calendar.md](calendar.md#the-details-page)) |

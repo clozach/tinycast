@@ -111,9 +111,9 @@ final class PaletteState {
     }
 
     /// Restore the screen underneath, false when this one is the root.
-    func pop() -> Bool {
+    func pop(preservingScreenState: Bool = false) -> Bool {
         guard let frame = backStack.popLast() else { return false }
-        openScreen(frame.mode)
+        if preservingScreenState { mode = frame.mode } else { openScreen(frame.mode) }
         query = frame.query
         selection = frame.selection
         // Not `resetToken`: landing the list again would throw away the selection restored here.
