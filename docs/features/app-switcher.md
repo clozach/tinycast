@@ -52,6 +52,22 @@ keeps its normal command behavior.
 
 ## Verification
 
+### System shortcut conflicts
+
+If Shift-Space during a Command-held gesture opens Siri's image search, macOS has
+claimed Shift-Command-Space for **Ask Siri about active window**. Open **System Settings →
+Keyboard → Keyboard Shortcuts → Screenshots** and disable that shortcut, or double-click
+its key combination and assign another one. **Ask Siri about selected area** remains
+available on Shift-Command-6. Re-enabling the checkbox restores the system binding.
+
+Tinycast's local event monitor cannot consume a key that the system captures first.
+Changing the conflicting system assignment allows the same held gesture to reach Tinycast.
+
+See Apple's [conflicting-shortcut instructions](https://support.apple.com/guide/mac-help/mchlp2864/mac)
+and [keyboard shortcut reference](https://support.apple.com/en-us/102650).
+
+### Checks
+
 `app-switch-test` compiles the shipped pure models. It covers the B/A head flip, filtering,
 both complete wrap cycles, duplicate and autorepeat delivery, Shift reversal, modifier continuity,
 partial release, final-key release, cancellation and empty or single-app lists.
