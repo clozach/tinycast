@@ -21,6 +21,15 @@ The palette becomes a list of open applications with the previous application se
 - Tinycast and background-only agents are excluded. Hidden and minimized regular applications
   remain eligible. A target that has quit does not get relaunched.
 
+## Selection visibility
+
+Keyboard selection changes request the palette's shared scroll-to-visible behavior through
+`PaletteState.followToken`. `RootPaletteView` consumes that token, so held-trigger repeats,
+Shift reversal and wraparound keep the highlighted app inside the space between the floating bars.
+Arrow keys use the same scroll behavior. A row already visible stays in place; manual scrolling
+remains free until the next keyboard selection step. The same token also serves window switching
+and restored palette selections.
+
 ## Recall duration
 
 The initial summon uses the existing **Settings → General → Pop to Root Search** delay.
@@ -74,7 +83,9 @@ partial release, final-key release, cancellation and empty or single-app lists.
 
 For a physical-key check, use two applications in succession (B then A). With Tinycast hidden,
 hold Command and tap Space: the old palette returns. Tap Space again: B is highlighted above A.
-Another tap selects A; Shift-Space goes back to B. Release all keys to switch, then repeat with
+Another tap selects A; Shift-Space goes back to B. With enough open apps to overflow, keep
+stepping past the bottom: the highlight stays visible. Reverse and wrap in both directions to
+check the top edge too. Release all keys to switch, then repeat with
 Escape to return to A. In another gesture, press an arrow or type before releasing: the list stays
 open, and Return performs the switch. Reopen within the configured delay to check the original
 palette state survived.

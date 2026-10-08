@@ -383,6 +383,7 @@ struct RootPaletteView: View {
             .onChange(of: vm.focusToken) {
                 searchFocused = !screen.hidesSearchField
             }
+            .onChange(of: vm.followToken) { scroll = ScrollIntent(kind: .follow) }
             .onChange(of: vm.isComposing) {
                 if vm.isComposing { appSwitch.activity() }
             }
