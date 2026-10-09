@@ -12,6 +12,8 @@ struct WindowSwitchEntry: Identifiable, Hashable, Sendable {
     let isMinimized: Bool
     /// Lower is nearer the front; `.max` when the app has no on-screen window to rank it by.
     let appRank: Int
+    var processID: Int32 = 0
+    var isAppHidden: Bool = false
 
     /// A string, because every palette list identifies its rows by one.
     var id: String { String(handle) }

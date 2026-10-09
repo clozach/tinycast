@@ -21,6 +21,29 @@ The palette becomes a list of open applications with the previous application se
 - Tinycast and background-only agents are excluded. Hidden and minimized regular applications
   remain eligible. A target that has quit does not get relaunched.
 
+## Windows of the selected app
+
+Press Right while the app list is open to browse the selected app's windows. This also works
+while the summon chord's Command modifier remains down. Drilling into windows cancels
+release-to-switch, so releasing Command leaves the window list open.
+
+The first list contains unminimized windows of that exact process. Hold Option to
+include minimized windows and windows of a hidden app; release Option to narrow it again.
+The current search is preserved during either change. Rows label **Minimized** and **Hidden**.
+Simply type to filter by window title or app name. While Option is held, letter keys still
+type ordinary filter letters, including Option dead keys. Modified navigation and Command
+shortcuts retain their normal behavior.
+
+Return opens the selected window. Option-Return works while hidden windows are included;
+Tinycast unhides the app, unminimizes the window if needed, and raises that window.
+Left with an empty filter returns to the app list, preserving its search and selection.
+With a nonempty filter, Left edits the search. Escape or activation unwinds the temporary
+app/window screens and restores the original palette state.
+
+The app row shows **Windows →** and its Actions menu has **Show Windows**. This drill-down
+is available independently of Settings → Navigation, which gates the standalone all-app
+**Switch Windows** command. Windows on other Spaces remain eligible.
+
 ## Selection visibility
 
 Keyboard selection changes request the palette's shared scroll-to-visible behavior through

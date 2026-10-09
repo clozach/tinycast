@@ -124,6 +124,18 @@ struct PaletteNavigationTests {
             "app switching leaves the underlying navigation stack intact")
 
         let chatted = searchingLauncher()
+        let appWindows = searchingLauncher()
+        appWindows.pushCarryingQuery(mode: .switchApps)
+        appWindows.query = "Editor"
+        appWindows.selection = 2
+        appWindows.pushCarryingQuery(mode: .switchWindows)
+        appWindows.query = "Draft"
+        appWindows.selection = 1
+        expect(appWindows.pop(preservingScreenState: true), "app windows return to their app list")
+        expect(appWindows.mode == .switchApps && appWindows.query == "Editor" && appWindows.selection == 2,
+            "the app window back step preserves the selected app and app filter")
+        expect(appWindows.pop(preservingScreenState: true) && appWindows.query == "clipboard",
+            "closing app windows restores the original palette behind the app list")
         chatted.push(mode: .ai)
         chatted.query = "why is the sky blue"
         chatted.push(mode: .clipboard)

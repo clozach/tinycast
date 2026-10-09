@@ -17,10 +17,11 @@ struct WindowSwitchList: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(entries) { entry in
-                        WindowSwitchRow(entry: entry, selected: entry.id == selectedID)
-                            .selectionFrame(entry.id == selectedID)
-                            .contentShape(Rectangle())
-                            .onTapGesture { onActivate(entry) }
+                        Button { onActivate(entry) } label: {
+                            WindowSwitchRow(entry: entry, selected: entry.id == selectedID)
+                        }
+                        .buttonStyle(.plain)
+                        .selectionFrame(entry.id == selectedID)
                     }
                 }
                 .padding(.horizontal, metrics.spacing.md)
@@ -50,7 +51,8 @@ private struct WindowSwitchRow: View {
     }
 
     private var trailing: String {
-        entry.isMinimized ? "\(entry.appName) · Minimized" : entry.appName
+        if entry.isMinimized { return "\(entry.appName) · Minimized" }
+        return entry.isAppHidden ? "\(entry.appName) · Hidden" : entry.appName
     }
 
     var body: some View {
@@ -69,11 +71,13 @@ private struct WindowSwitchRow: View {
                 .foregroundStyle(entry.isMinimized ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                 .lineLimit(1)
                 .truncationMode(.middle)
+                .tooltip(entry.displayTitle)
             Spacer(minLength: metrics.spacing.md)
             Text(trailing)
                 .font(metrics.typography.rowTrailing)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+                .tooltip(trailing)
         }
         .padding(.horizontal, metrics.spacing.md)
         .padding(.vertical, metrics.spacing.sm)

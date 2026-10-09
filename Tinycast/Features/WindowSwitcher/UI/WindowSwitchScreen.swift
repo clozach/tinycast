@@ -23,14 +23,27 @@ struct WindowSwitchScreen: PaletteScreen {
 
     @ViewBuilder
     private func content(selection: Int, scroll: ScrollIntent) -> some View {
-        if rows.isEmpty {
-            EmptyResults(text: session.snapshot.isEmpty ? "No open windows" : "No windows found")
-        } else {
-            WindowSwitchList(
-                entries: rows,
-                selectedID: rows.indices.contains(selection) ? rows[selection].id : nil,
-                scroll: scroll,
-                onActivate: { core.windowSwitchCoordinator.activate($0) })
+        VStack(spacing: 0) {
+            if let name = session.scope.applicationName {
+                WindowSwitchScopeBar(name: name, includesHidden: session.scope.includesHidden)
+            }
+            if rows.isEmpty {
+                EmptyResults(text: emptyMessage)
+            } else {
+                WindowSwitchList(
+                    entries: rows,
+                    selectedID: rows.indices.contains(selection) ? rows[selection].id : nil,
+                    scroll: scroll,
+                    onActivate: { core.windowSwitchCoordinator.activate($0) })
+            }
         }
+    }
+
+    private var emptyMessage: String {
+        if !core.palette.query.isEmpty { return "No windows found" }
+        if session.scope.applicationID != nil, !session.scope.includesHidden {
+            return "No visible windows · Hold ⌥ for hidden"
+        }
+        return "No open windows"
     }
 }

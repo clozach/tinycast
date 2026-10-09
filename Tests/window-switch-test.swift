@@ -29,6 +29,8 @@ struct WindowSwitchTests {
         orderingIsTotal()
         ranking()
         rankingLimit()
+        applicationScope()
+        restorableDialogs()
 
         print(failures == 0 ? "Window switch tests passed" : "\(failures) window switch tests failed")
         exit(failures == 0 ? 0 : 1)
@@ -36,6 +38,43 @@ struct WindowSwitchTests {
 
     static func identity() {
         expect(entry(7).id == "7", "the id is the handle, which is unique inside one sweep")
+    }
+
+    static func restorableDialogs() {
+        expect(WindowSwitchEligibility.includes(isStandard: true, isDialog: false, canMinimize: false),
+            "standard windows remain eligible even when minimization is unavailable")
+        expect(WindowSwitchEligibility.includes(isStandard: false, isDialog: true, canMinimize: true),
+            "TextEdit's minimizable document dialogs are switchable")
+        expect(!WindowSwitchEligibility.includes(isStandard: false, isDialog: true, canMinimize: false),
+            "transient dialog menus stay out")
+        expect(!WindowSwitchEligibility.includes(isStandard: false, isDialog: false, canMinimize: true),
+            "floating and helper panels stay out")
+    }
+
+    static func applicationScope() {
+        let visible = WindowSwitchEntry(handle: 0, appName: "Editor", bundleID: "test",
+            iconURL: nil, iconStamp: 0, title: "Draft", isMinimized: false, appRank: 0, processID: 42)
+        let minimized = WindowSwitchEntry(handle: 1, appName: "Editor", bundleID: "test",
+            iconURL: nil, iconStamp: 0, title: "Archive", isMinimized: true, appRank: 0, processID: 42)
+        var hidden = visible
+        hidden.isAppHidden = true
+        var otherProcess = visible
+        otherProcess.processID = 43
+        let scope = WindowSwitchScope.application(id: 42, name: "Editor", includingHidden: false)
+        expect(scope.contains(visible), "visible windows belong to the selected process")
+        expect(!scope.contains(minimized), "minimized windows stay out until Option is held")
+        expect(!scope.contains(hidden), "hidden app windows stay out until Option is held")
+        expect(!scope.contains(otherProcess), "another instance of the same app stays out")
+        let expanded = scope.includingHidden(true)
+        expect(expanded.contains(minimized) && expanded.contains(hidden), "Option includes both kinds")
+        expect(!expanded.contains(otherProcess), "Option never expands to another app")
+        expect(expanded.includingHidden(false) == scope, "releasing Option returns to visible scope")
+        expect(WindowSwitchScope.all.includingHidden(false) == .all, "global switcher retains all windows")
+        expect(WindowSwitchScope.all.contains(minimized), "global switcher still includes minimized windows")
+        expect(WindowSwitchQuery.rank([visible, minimized].filter(expanded.contains), for: "arch")
+            .map(\.handle) == [1], "typing finds a minimized title when expanded")
+        expect(WindowSwitchQuery.rank([visible, minimized].filter(scope.contains), for: "arch").isEmpty,
+            "the same query cannot leak a minimized window when narrowed")
     }
 
     static func displayTitle() {

@@ -58,6 +58,11 @@ private struct AppSwitchRow: View {
                 .lineLimit(1)
                 .tooltip(entry.name)
             Spacer(minLength: metrics.spacing.md)
+            if selected {
+                Text("Windows →")
+                    .font(metrics.typography.rowTrailing)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, metrics.spacing.md)
         .padding(.vertical, metrics.spacing.sm)

@@ -20,11 +20,12 @@ enum WindowSwitchSweep {
         var elements: [Int: Element]
     }
 
-    static func snapshot(ranks: [pid_t: Int]) -> Snapshot {
+    static func snapshot(ranks: [pid_t: Int], applicationID: pid_t? = nil) -> Snapshot {
         var entries: [WindowSwitchEntry] = []
         var elements: [Int: Element] = [:]
 
         for app in WindowInventory.candidates() {
+            if let applicationID, app.processIdentifier != applicationID { continue }
             guard let bundleID = app.bundleIdentifier else { continue }
             let pid = app.processIdentifier
             let application = AXWindowAccess.application(for: pid, timeout: sweepTimeout)
@@ -40,7 +41,7 @@ enum WindowSwitchSweep {
                         bundleID: bundleID, iconURL: iconURL, iconStamp: iconStamp,
                         title: AXWindowAccess.string(window, kAXTitleAttribute) ?? "",
                         isMinimized: AXWindowAccess.bool(window, kAXMinimizedAttribute) == true,
-                        appRank: ranks[pid] ?? .max))
+                        appRank: ranks[pid] ?? .max, processID: pid, isAppHidden: app.isHidden))
                 elements[handle] = Element(app: app, application: application, window: window)
             }
         }
@@ -50,6 +51,12 @@ enum WindowSwitchSweep {
     /// Looser than the layout inventory's rule: a minimized window is exactly what a switcher is
     /// for, and a window on another Space reports no frame until it is raised.
     private static func isSwitchable(_ window: AXUIElement) -> Bool {
-        AXWindowAccess.string(window, kAXSubroleAttribute) == (kAXStandardWindowSubrole as String)
+        guard AXWindowAccess.string(window, kAXRoleAttribute) == (kAXWindowRole as String) else { return false }
+        let subrole = AXWindowAccess.string(window, kAXSubroleAttribute)
+        let isDialog = subrole == (kAXDialogSubrole as String)
+        return WindowSwitchEligibility.includes(
+            isStandard: subrole == (kAXStandardWindowSubrole as String),
+            isDialog: isDialog,
+            canMinimize: isDialog && AXWindowAccess.isSettable(kAXMinimizedAttribute, on: window))
     }
 }

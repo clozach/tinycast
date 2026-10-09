@@ -391,8 +391,9 @@ struct RootPaletteView: View {
             .modifier(PaletteHideObserver { if menuOpen { closeMenus() } })
             .onChange(of: vm.query) {
                 if vm.collapseQueryLineBreaks() { return }
-                appSwitch.queryChanged()
+                let appQueryChanged = appSwitch.queryChanged()
                 if appSwitch.restoresHiddenPalette { return }
+                if vm.mode == .switchApps, !appQueryChanged { return }
                 land()
                 if vm.mode == .fileSearch { fileSearch.search(vm.query, filter: vm.fileSearchFilter) }
                 if vm.mode == .dictionary { dictionary.lookUp(vm.query) }
@@ -418,6 +419,7 @@ struct RootPaletteView: View {
             }
             .onChange(of: vm.mode) {
                 if vm.mode == .switchApps || appSwitch.restoresHiddenPalette {
+                    if vm.mode == .switchApps { windowSwitch.reset() }
                     searchFocused = !screen.hidesSearchField
                     return
                 }
@@ -848,6 +850,9 @@ struct RootPaletteView: View {
         // Inside a running command the search bar belongs to the extension.
         if vm.mode == .extensionCommand, let placeholder = extensionScreen.searchPlaceholder {
             return placeholder
+        }
+        if vm.mode == .switchWindows, let name = windowSwitch.scope.applicationName {
+            return "Filter \(name) windows…"
         }
         return vm.mode.placeholder
     }

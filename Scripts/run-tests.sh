@@ -128,6 +128,13 @@ run menu-search-test       $L/SearchRelevance.swift \
                            Tinycast/Features/MenuSearch/Service/*.swift
 run window-switch-test     $L/SearchRelevance.swift \
                            Tinycast/Features/WindowSwitcher/Model/*.swift
+run app-window-test        $L/SearchRelevance.swift \
+                           Tinycast/Features/WindowSwitcher/Model/*.swift \
+                           Tinycast/Features/WindowSwitcher/Service/WindowSwitchSession.swift \
+                           Tinycast/Features/WindowSwitcher/UI/WindowSwitchCoordinator.swift \
+                           Tinycast/Features/AppSwitcher/Model/*.swift \
+                           Tinycast/Features/AppSwitcher/UI/AppSwitchCoordinator.swift \
+                           Tinycast/Palette/PaletteState.swift Tinycast/Palette/HoverArming.swift
 run index file-search-performance Tinycast/Platform/Signposts.swift \
                            $L/SearchRelevance.swift \
                            Tinycast/Features/FileSearch/Model/*.swift \

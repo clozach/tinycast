@@ -9,6 +9,11 @@ switcher and the pane the two share.
 Ships **off**. Settings › Navigation is the switch, and while it is off neither command is in the
 launcher and a still-recorded shortcut for either does nothing.
 
+The app switcher's **Right → app windows** path is available regardless of this switch.
+That list begins with visible, unminimized windows of the selected process; holding Option
+adds hidden-app and minimized windows. The standalone command continues listing all apps
+and includes hidden/minimized windows without Option. See [app-switcher.md](app-switcher.md).
+
 ## Invariants
 
 - **The sweep is synchronous, and that is deliberate.** `WindowSwitchSweep.snapshot` visits apps and
@@ -40,6 +45,7 @@ launcher and a still-recorded shortcut for either does nothing.
 | --- | --- |
 | `Model/WindowSwitchEntry.swift` | one row: handle, app, title, minimized, rank, search fields |
 | `Model/WindowSwitchOrder.swift` | the MRU sort, pure and total |
+| `Model/WindowSwitchScope.swift` | all apps or one process; held-Option visibility |
 | `Model/WindowSwitchQuery.swift` | ranking over `SearchRelevance`, capped at 200 rows |
 | `Service/WindowZOrder.swift` | the one `CGWindowList` call: per-pid front rank |
 | `Service/WindowSwitchSweep.swift` | the AX sweep, and the live element table it hands back |
@@ -70,7 +76,9 @@ rather than after the user has switched apps once.
 ## The sweep
 
 `WindowSwitchSweep` walks `WindowInventory.candidates()` — regular-policy, non-terminated, not us —
-and takes every window whose subrole is `AXStandardWindow`. That is looser than
+and takes every `AXStandardWindow`, plus `AXDialog` windows with a writable minimized attribute
+(TextEdit uses that subrole for some document windows). Transient menus and nonminimizable
+dialogs stay out. That is looser than
 `WindowInventory.eligibleFrame` in two ways that both matter here: a **minimized** window is exactly
 what a switcher is for, and a window on another Space reports no frame until it is raised, so
 requiring one would hide it.
@@ -93,7 +101,7 @@ nothing.
 
 ## Raising
 
-`activate` un-minimizes if it has to, raises the window inside its app, sets `AXFrontmost`, then calls
+`activate` unhides the app if needed, un-minimizes if it has to, raises the window inside its app, sets `AXFrontmost`, then calls
 `NSRunningApplication.activate()`. All four steps are needed and none is redundant: the raise alone
 orders the window inside an app that is not frontmost, and activating alone brings the app's *own*
 front window forward rather than the chosen one. Activating is also what pulls another Space forward,

@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 
 @MainActor
 final class WindowSwitchCoordinator {
@@ -37,9 +38,66 @@ final class WindowSwitchCoordinator {
             Task { await self.reportPermissionFailure() }
             return
         }
-        if paletteCoordinator.isShowing(.switchWindows) { return step() }
+        if paletteCoordinator.isShowing(.switchWindows), session.scope == .all { return step() }
         disarmSwitchOnRelease()
-        paletteCoordinator.togglePalette(mode: .switchWindows)
+        paletteCoordinator.showPalette(mode: .switchWindows)
+    }
+
+    func showWindows(of app: AppSwitchEntry, includingHidden: Bool) {
+        guard Permissions.ensureAccessibility() else {
+            Task { await self.reportPermissionFailure() }
+            return
+        }
+        disarmSwitchOnRelease()
+        let scope = WindowSwitchScope.application(id: app.id, name: app.name, includingHidden: includingHidden)
+        session.present(WindowSwitchSweep.snapshot(ranks: [:], applicationID: app.id), scope: scope)
+        palette.pushCarryingQuery(mode: .switchWindows)
+        palette.query = ""
+        session.filter("")
+        palette.selection = 0
+        palette.focusToken = UUID()
+        palette.followToken = UUID()
+        paletteCoordinator.syncPaletteSize()
+    }
+
+    func handle(_ event: NSEvent) -> Bool {
+        guard palette.mode == .switchWindows, session.scope.applicationID != nil else { return false }
+        if event.type == .flagsChanged {
+            let selectedID = session.filtered.indices.contains(palette.selection)
+                ? session.filtered[palette.selection].id : nil
+            if session.includeHidden(event.modifierFlags.contains(.option)) {
+                palette.selection = session.filtered.firstIndex { $0.id == selectedID } ?? 0
+                palette.followToken = UUID()
+            }
+        }
+        if event.type == .keyDown, Int(event.keyCode) == kVK_Return,
+            event.modifierFlags.contains(.option),
+            event.modifierFlags.isDisjoint(with: [.command, .control, .shift]),
+            !palette.isComposing, !palette.menuOpen {
+            if session.filtered.indices.contains(palette.selection) {
+                activate(session.filtered[palette.selection])
+            }
+            return true
+        }
+        guard event.type == .keyDown, Int(event.keyCode) == kVK_LeftArrow,
+            event.modifierFlags.isDisjoint(with: Self.chordModifiers),
+            palette.query.isEmpty, !palette.isComposing, !palette.menuOpen else { return false }
+        return palette.pop(preservingScreenState: true)
+    }
+
+    func filteringEvent(_ event: NSEvent) -> NSEvent? {
+        guard palette.mode == .switchWindows, session.scope.applicationID != nil,
+            !palette.menuOpen, !palette.isComposing, !palette.isEditingField,
+            event.type == .keyDown, event.modifierFlags.contains(.option),
+            event.modifierFlags.isDisjoint(with: [.command, .control]),
+            let text = event.charactersIgnoringModifiers, !text.isEmpty,
+            text.unicodeScalars.allSatisfy({ CharacterSet.alphanumerics.contains($0)
+                || CharacterSet.punctuationCharacters.contains($0) || $0 == " " }) else { return nil }
+        return NSEvent.keyEvent(
+            with: .keyDown, location: event.locationInWindow,
+            modifierFlags: event.modifierFlags.subtracting(.option), timestamp: event.timestamp,
+            windowNumber: event.windowNumber, context: nil, characters: text,
+            charactersIgnoringModifiers: text, isARepeat: event.isARepeat, keyCode: event.keyCode)
     }
 
     /// The first step lands on the window behind the current one, which the list opens on.
@@ -97,6 +155,7 @@ final class WindowSwitchCoordinator {
         }
         // Restoring focus reactivates the displaced app, which races the raise below.
         paletteCoordinator.hidePalette(restoreFocus: false)
+        if element.app.isHidden { element.app.unhide() }
         if entry.isMinimized { _ = AXWindowAccess.unminimize(element.window) }
         AXWindowAccess.focus(element.window, in: element.application, of: element.app)
     }

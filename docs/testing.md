@@ -119,6 +119,7 @@ If a change touches anything in the right column, the harness on the left is man
 | `palette-placement-test` | `DesignSystem/Theme.swift`, `Palette/PalettePlacement.swift` |
 | `hotkey-test` | `HotKeys/Model/DoubleTapModifier.swift`, `DoubleTapDetector.swift`, `GlobeTapDetector.swift`, `HotKeyBinding.swift`, `HotKeySpelling.swift`, `HyperKey.swift`, `HotKeyAction.swift`, `Service/KeyShortcut.swift`, and the command→action mapping in `Launcher/Model/CommandID.swift` |
 | `app-switch-test` | `AppSwitcher/Model/` — recency head flip, filtering, both wrap directions, held-trigger recognition, autorepeat suppression, final-key release and cancellation |
+| `app-window-test` | Shipped app/window coordinators and session — Right drill-down, exact process scope, held Option expansion/release, ordinary Option-letter filtering, activation, back navigation, original palette restoration and permission denial (AX/app boundaries mocked) |
 | `fallback-test` | `Launcher/Model/Fallback.swift`, plus the `CommandID` and `Quicklink` ids it is built from |
 | `contacts-test` | `Contacts/Model/ContactCard.swift`, `ContactSearch.swift` — card ranking by name, company and number, and the field filter |
 | `dictionary-test` | `Dictionary/Model/DictionaryEntry.swift`, `DictionaryMarkup.swift` — a real XHTML record and the plain-text fallback, read into page blocks |

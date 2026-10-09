@@ -410,7 +410,9 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
             matching: [.keyDown, .keyUp, .flagsChanged, .leftMouseDown, .rightMouseDown, .otherMouseDown, .scrollWheel]
         ) { [weak self] event in
             guard let self, self.panel?.isKeyWindow == true else { return event }
-            return self.core.appSwitchCoordinator.handle(event) ? nil : event
+            if self.core.windowSwitchCoordinator.handle(event) { return nil }
+            if self.core.appSwitchCoordinator.handle(event) { return nil }
+            return self.core.windowSwitchCoordinator.filteringEvent(event) ?? event
         }
         // Handled at the panel: a focused preview answers Escape before the palette's own handler.
         panel.onEscape = { [weak self] in
