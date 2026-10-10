@@ -17,6 +17,9 @@ struct AppSwitchScreen: PaletteScreen {
         ])
     }
     func activate(at selection: Int) { coordinator.activate(at: selection) }
+    func showChildren(at selection: Int, includingHidden: Bool) -> Bool {
+        coordinator.showWindows(at: selection, includingHidden: includingHidden)
+    }
     func secondary(at selection: Int) -> Bool { false }
     func body(selection: Int, scroll: ScrollIntent) -> AnyView {
         AnyView(AppSwitchList(

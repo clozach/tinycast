@@ -21,6 +21,25 @@ struct PaletteHorizontalArrowTests {
     }
 
     static func main() {
+        expect(PaletteHorizontalArrow.leavesText(selection: NSRange(location: 3, length: 0), length: 3,
+            direction: 1), true, "right at the end of saf opens children")
+        expect(PaletteHorizontalArrow.leavesText(selection: NSRange(location: 1, length: 0), length: 3,
+            direction: 1), false, "right inside saf still moves the caret")
+        expect(PaletteHorizontalArrow.leavesText(selection: NSRange(location: 0, length: 0), length: 7,
+            direction: -1), true, "left at the start of a window filter goes back")
+        expect(PaletteHorizontalArrow.leavesText(selection: NSRange(location: 1, length: 0), length: 7,
+            direction: -1), false, "left inside a window filter still moves the caret")
+        for direction in [-1, 1] {
+            expect(PaletteHorizontalArrow.leavesText(selection: NSRange(location: 0, length: 3), length: 3,
+                direction: direction), false, "a selected query keeps its arrow to collapse selection")
+            expect(PaletteHorizontalArrow.leavesText(selection: NSRange(location: 0, length: 0), length: 0,
+                direction: direction), true, "an empty filter has both navigation boundaries")
+        }
+        expect(PaletteHorizontalArrow.leavesText(selection: NSRange(location: 2, length: 0), length: 2,
+            direction: 1), true, "an emoji query uses the field editor's UTF-16 length")
+        expect(PaletteHorizontalArrow.leavesText(selection: NSRange(location: NSNotFound, length: 0), length: 3,
+            direction: 1), false, "an unavailable insertion point does not open children")
+
         // A bare arrow, as an arrow key carries it, steps the grid.
         let arrow: EventModifiers = [.function, .numericPad]
         expect(steps(arrow, from: 3, to: 2), true, "← mid-grid steps left")

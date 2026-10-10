@@ -133,6 +133,7 @@ private extension MenuPanelCorner {
         onActivate: @escaping (Int) -> Void
     ) -> PaletteMenuContent?
     func activate(at selection: Int)
+    func showChildren(at selection: Int, includingHidden: Bool) -> Bool
     /// ⌘↵. False when the selection has no secondary action, leaving the key unhandled.
     func secondary(at selection: Int) -> Bool
     /// ⌃⌘↵. False when the selection has no third action, leaving the chord to `secondary`.
@@ -152,6 +153,7 @@ private extension MenuPanelCorner {
 }
 
 extension PaletteScreen {
+    func showChildren(at selection: Int, includingHidden: Bool) -> Bool { false }
     func hasPrimaryAction(at selection: Int) -> Bool { true }
     func hasActions(at selection: Int) -> Bool { true }
     var hidesSearchField: Bool { false }

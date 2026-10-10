@@ -11,11 +11,15 @@ struct PaletteFrame: Equatable {
 @MainActor
 @Observable
 final class PaletteState {
-    var mode: PaletteMode = .launcher
+    var mode: PaletteMode = .launcher { didSet { restoredFrame = nil } }
     /// The screens below `mode`, innermost last: a summon starts a new one, navigating pushes on.
     private(set) var backStack: [PaletteFrame] = []
-    var query: String = ""
+    var query: String = "" { didSet { restoredFrame = nil } }
     var selection: Int = 0
+    @ObservationIgnored private var restoredFrame: PaletteFrame?
+    var restoresSelection: Bool {
+        restoredFrame == PaletteFrame(mode: mode, query: query, selection: selection)
+    }
     /// True while an IME holds marked text, which leaves `query` empty. The panel publishes it.
     var isComposing = false
     /// The clipboard screen's type filter, reset with the rest of the screen state on each summon.
@@ -116,6 +120,7 @@ final class PaletteState {
         if preservingScreenState { mode = frame.mode } else { openScreen(frame.mode) }
         query = frame.query
         selection = frame.selection
+        restoredFrame = frame
         // Not `resetToken`: landing the list again would throw away the selection restored here.
         followToken = UUID()
         return true

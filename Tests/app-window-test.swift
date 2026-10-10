@@ -25,6 +25,8 @@ import Carbon.HIToolbox
         core.appSwitchCoordinator.present()
         expect(core.palette.mode == .switchApps, "the shipped presentation enters the app list")
         expect(core.appSwitchCoordinator.filtered.first?.id == 42, "the selected app is the previous app")
+        expect(!core.appSwitchCoordinator.handle(key(kVK_RightArrow, flags: .command), atQueryEnd: false),
+            "the app gesture leaves right inside the text with the caret")
         expect(core.appSwitchCoordinator.handle(key(kVK_RightArrow, flags: .command)), "right works with Command held")
         expect(core.palette.mode == .switchWindows, "right opens app windows")
         expect(WindowSwitchSweep.lastApplicationID == 42, "the sweep reads only the selected process")
@@ -65,15 +67,15 @@ import Carbon.HIToolbox
         core.palette.selection = 1
         core.appSwitchCoordinator.showWindows(at: 1)
         core.palette.query = "draft"
-        expect(!core.windowSwitchCoordinator.handle(key(kVK_LeftArrow)), "left edits a nonempty query")
+        expect(!core.windowSwitchCoordinator.handle(key(kVK_LeftArrow)), "the shared field boundary owns left")
         core.palette.query = ""
-        expect(core.windowSwitchCoordinator.handle(key(kVK_LeftArrow)), "left on an empty filter returns to apps")
+        expect(core.palette.pop(preservingScreenState: true), "the shared back step returns to apps")
         expect(core.palette.mode == .switchApps && core.palette.selection == 1, "back preserves the selected app")
         core.palette.query = "editor"
         _ = core.appSwitchCoordinator.queryChanged()
         core.appSwitchCoordinator.showWindows(at: 0)
         core.palette.query = ""
-        _ = core.windowSwitchCoordinator.handle(key(kVK_LeftArrow))
+        _ = core.palette.pop(preservingScreenState: true)
         expect(core.palette.query == "editor" && !core.appSwitchCoordinator.queryChanged(),
             "back restores the app query without resetting its selection")
         core.palette.query = ""
@@ -86,6 +88,29 @@ import Carbon.HIToolbox
         let globalCount = core.windowSwitch.filtered.count
         _ = core.windowSwitchCoordinator.handle(flags([]))
         expect(core.windowSwitch.filtered.count == globalCount, "global window list retains minimized windows")
+        core.palette.prepare(mode: .launcher)
+        core.palette.query = "saf"
+        core.palette.selection = 2
+        core.windowSwitchCoordinator.showWindows(of: AppSwitchEntry(id: 42, name: "Safari", bundlePath: nil),
+            includingHidden: false)
+        core.palette.query = "window"
+        expect(core.palette.pop(preservingScreenState: true), "back works while a window filter contains text")
+        expect(core.palette.mode == .launcher && core.palette.query == "saf" && core.palette.selection == 2
+            && core.palette.restoresSelection, "back restores ordinary search and its highlighted app")
+        core.palette.query = "sa"
+        expect(!core.palette.restoresSelection, "editing after back resumes normal result landing")
+        core.palette.query = "saf"
+        core.palette.selection = 2
+        core.windowSwitchCoordinator.showWindows(of: AppSwitchEntry(id: 42, name: "Safari", bundlePath: nil),
+            includingHidden: true)
+        core.paletteCoordinator.hidePalette()
+        expect(core.palette.mode == .launcher && core.palette.query == "saf" && core.palette.selection == 2,
+            "activation or dismissal restores the ordinary search parent too")
+        core.paletteCoordinator.isVisible = true
+        expect(!core.windowSwitchCoordinator.showWindows(of: AppEntry(kind: .command, bundleID: "com.apple.Safari",
+            name: "Command")), "a command row cannot masquerade as an app")
+        expect(!core.windowSwitchCoordinator.showWindows(of: AppEntry(kind: .application, bundleID: "missing.fixture",
+            name: "Not running")), "browsing does not launch a stopped app")
         Permissions.allowed = false
         core.palette.mode = .switchApps
         let previousScope = core.windowSwitch.scope
@@ -106,6 +131,12 @@ enum EmojiGridZoom { case actualSize }
 struct PasteTarget: Equatable {}
 struct KeyShortcut { let carbonKeyCode: Int; let modifierFlags: NSEvent.ModifierFlags }
 enum HotKeyAction { case togglePalette }
+struct AppEntry {
+    enum Kind { case application, command }
+    let kind: Kind
+    let bundleID: String?
+    let name: String
+}
 struct HotKeyBinding { let shortcut: KeyShortcut? }
 @MainActor final class HotKeys {
     func binding(for action: HotKeyAction) -> HotKeyBinding? { nil }

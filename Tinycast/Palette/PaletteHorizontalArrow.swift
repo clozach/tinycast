@@ -2,6 +2,15 @@ import SwiftUI
 
 /// ←/→ on a screen with both a search caret and a grid: one rule, so neither can starve the other.
 enum PaletteHorizontalArrow {
+    static func leavesText(selection: NSRange, length: Int, direction: Int) -> Bool {
+        guard selection.length == 0 else { return false }
+        switch direction {
+        case -1: return selection.location == 0
+        case 1: return selection.location == length
+        default: return false
+        }
+    }
+
     /// The caret's own chords (⌘← to the start, ⌥← by word, ⇧← to select) always edit the query.
     /// A plain arrow steps the grid, and goes to the caret when the step cannot leave its cell, so a
     /// press at the grid's edge is never swallowed while the caret blinks beside it.

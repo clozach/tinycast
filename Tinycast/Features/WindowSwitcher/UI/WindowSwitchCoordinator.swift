@@ -60,6 +60,17 @@ final class WindowSwitchCoordinator {
         paletteCoordinator.syncPaletteSize()
     }
 
+    @discardableResult
+    func showWindows(of app: AppEntry, includingHidden: Bool = false) -> Bool {
+        guard app.kind == .application, let bundleID = app.bundleID,
+            let target = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+                .first(where: { !$0.isTerminated }) else { return false }
+        showWindows(of: AppSwitchEntry(
+            id: target.processIdentifier, name: app.name, bundlePath: target.bundleURL?.path),
+            includingHidden: includingHidden)
+        return true
+    }
+
     func handle(_ event: NSEvent) -> Bool {
         guard palette.mode == .switchWindows, session.scope.applicationID != nil else { return false }
         if event.type == .flagsChanged {
@@ -79,10 +90,7 @@ final class WindowSwitchCoordinator {
             }
             return true
         }
-        guard event.type == .keyDown, Int(event.keyCode) == kVK_LeftArrow,
-            event.modifierFlags.isDisjoint(with: Self.chordModifiers),
-            palette.query.isEmpty, !palette.isComposing, !palette.menuOpen else { return false }
-        return palette.pop(preservingScreenState: true)
+        return false
     }
 
     func filteringEvent(_ event: NSEvent) -> NSEvent? {

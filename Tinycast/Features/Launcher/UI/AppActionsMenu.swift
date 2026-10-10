@@ -59,6 +59,12 @@ enum AppActionsMenu {
         if running, app.kind == .application {
             items.append(
                 PopoverMenuItem(
+                    title: "Show Windows", systemImage: "macwindow.on.rectangle", shortcut: "→"
+                ) {
+                    core.windowSwitchCoordinator.showWindows(of: app)
+                })
+            items.append(
+                PopoverMenuItem(
                     title: "Restart Application", systemImage: "arrow.clockwise", startsSection: true,
                     shortcut: "⌘R"
                 ) {

@@ -63,17 +63,17 @@ final class AppSwitchCoordinator {
         sampleRelease()
     }
 
-    func handle(_ event: NSEvent) -> Bool {
+    func handle(_ event: NSEvent, atQueryEnd: Bool = true) -> Bool {
         guard core.paletteCoordinator.isVisible else { return false }
         if event.type == .keyDown {
             if Int(event.keyCode) == kVK_Escape, escapeWhileSwitching() { return true }
-            let canDrill = !event.modifierFlags.contains(.command) || releasesToActivate || core.palette.query.isEmpty
+            let canDrill = event.modifierFlags.contains(.command)
+                && (releasesToActivate || core.palette.query.isEmpty)
             if Int(event.keyCode) == kVK_RightArrow, core.palette.mode == .switchApps,
                 !core.palette.menuOpen, !core.palette.isComposing,
                 event.modifierFlags.isDisjoint(with: [.shift, .control]),
-                canDrill {
-                showWindows(at: core.palette.selection, includingHidden: event.modifierFlags.contains(.option))
-                return true
+                canDrill, atQueryEnd {
+                return showWindows(at: core.palette.selection, includingHidden: event.modifierFlags.contains(.option))
             }
             let flags = UInt64(event.modifierFlags.intersection(Self.modifiers).rawValue)
             if let trigger = gesture.trigger, trigger.matches(keyCode: Int(event.keyCode), modifiers: flags) {
@@ -109,10 +109,12 @@ final class AppSwitchCoordinator {
 
     func paletteWillHide() {
         cancelGesture()
+        restoredFrame = nil
         if core.palette.mode == .switchWindows,
-            core.windowSwitch.scope.applicationID != nil,
-            core.palette.backStack.last?.mode == .switchApps {
+            core.windowSwitch.scope.applicationID != nil {
             _ = core.palette.pop(preservingScreenState: true)
+            restoredFrame = PaletteFrame(
+                mode: core.palette.mode, query: core.palette.query, selection: core.palette.selection)
         }
         if core.palette.mode == .switchApps {
             _ = core.palette.pop(preservingScreenState: true)
@@ -120,8 +122,6 @@ final class AppSwitchCoordinator {
                 mode: core.palette.mode, query: core.palette.query, selection: core.palette.selection)
             core.palette.noteEditingField(wasEditingField)
             core.palette.noteControlListOpen(wasControlListOpen)
-        } else {
-            restoredFrame = nil
         }
         entries = []
     }
@@ -134,11 +134,13 @@ final class AppSwitchCoordinator {
         if app?.isTerminated == false { app?.activate() }
     }
 
-    func showWindows(at selection: Int, includingHidden: Bool = false) {
+    @discardableResult
+    func showWindows(at selection: Int, includingHidden: Bool = false) -> Bool {
         let rows = filtered
-        guard rows.indices.contains(selection) else { return }
+        guard rows.indices.contains(selection) else { return false }
         cancelGesture()
         core.windowSwitchCoordinator.showWindows(of: rows[selection], includingHidden: includingHidden)
+        return true
     }
 
     func present() {

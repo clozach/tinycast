@@ -43,6 +43,7 @@ struct PaletteNavigationTests {
             vm.mode == .launcher && vm.query == "clipboard" && vm.selection == 3,
             "the back step restores the screen, its query and its selection")
         expect(!vm.canGoBack, "the restored screen is the root again")
+        expect(vm.restoresSelection, "query and mode observers preserve a restored row")
         expect(!vm.pop(), "a root has nowhere left to go")
         expect(
             vm.mode == .launcher && vm.query == "clipboard",

@@ -18,7 +18,7 @@ final class PalettePanel: NSPanel {
     /// The palette's typing context, handed over each time a field takes focus.
     var onFieldEditorFocused: ((NSTextInputContext) -> Void)?
     /// Inline argument fields use arrows at their text boundaries to continue their focus ring.
-    var onHeaderFieldBoundaryArrow: ((HeaderFieldBoundary) -> Bool)?
+    var onHeaderFieldBoundaryArrow: ((HeaderFieldBoundary, NSEvent) -> Bool)?
     /// Arms hover from `sendEvent`, the one place both event streams pass through.
     weak var paletteState: PaletteState? {
         didSet {
@@ -32,18 +32,27 @@ final class PalettePanel: NSPanel {
     /// SwiftUI's text fields all edit through the window's one shared field editor.
     private var fieldEditor: NSTextView? { firstResponder as? NSTextView }
 
+    var queryCaretAtEnd: Bool {
+        guard let editor = fieldEditor else { return false }
+        return PaletteHorizontalArrow.leavesText(
+            selection: editor.selectedRange(), length: (editor.string as NSString).length, direction: 1)
+    }
+
     func selectAllFieldEditorText() {
         fieldEditor?.selectAll(nil)
     }
 
     /// Nil while a selection can still collapse normally, or when the caret is not at an edge.
     private func headerFieldBoundary(for event: NSEvent) -> HeaderFieldBoundary? {
-        guard event.modifierFlags.isDisjoint(with: [.command, .option, .control, .shift]),
-            let editor = fieldEditor, editor.selectedRange().length == 0
+        guard event.modifierFlags.isDisjoint(with: [.command, .control, .shift]),
+            let editor = fieldEditor
         else { return nil }
         switch Int(event.keyCode) {
-        case kVK_LeftArrow where editor.selectedRange().location == 0: return .leading
-        case kVK_RightArrow where editor.selectedRange().location == (editor.string as NSString).length:
+        case kVK_LeftArrow where !event.modifierFlags.contains(.option)
+            && PaletteHorizontalArrow.leavesText(
+                selection: editor.selectedRange(), length: (editor.string as NSString).length, direction: -1):
+            return .leading
+        case kVK_RightArrow where queryCaretAtEnd:
             return .trailing
         default: return nil
         }
@@ -194,7 +203,7 @@ final class PalettePanel: NSPanel {
             return
         }
         if event.type == .keyDown, let boundary = headerFieldBoundary(for: event),
-            onHeaderFieldBoundaryArrow?(boundary) == true
+            onHeaderFieldBoundaryArrow?(boundary, event) == true
         {
             return
         }

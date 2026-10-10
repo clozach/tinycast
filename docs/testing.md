@@ -112,14 +112,14 @@ If a change touches anything in the right column, the harness on the left is man
 | `emoji-test` | `Emoji/Model/EmojiCatalog.swift`, `EmojiGridGeometry.swift`, the generated data and keyword packs |
 | `emoji-search-test` | `Emoji/Service/EmojiIndex.swift`, `FrequentEmojiStore.swift`, `Scripts/gen-emoji.js`'s keyword format, multilingual search |
 | `emoji-root-search-test` | Shared app/emoji ranking, KM learning in both directions, aliases, synonyms, colon names, localized keywords, full candidate pool, reset and persistence |
-| `palette-horizontal-arrow-test` | `Palette/PaletteHorizontalArrow.swift` — which ←/→ presses step a grid and which go to the search caret |
-| `palette-navigation-test` | `Palette/PaletteState.swift`'s screen motions — `prepare`, `replace`, `push`, `pop` |
+| `palette-horizontal-arrow-test` | `Palette/PaletteHorizontalArrow.swift` — grid steps, caret boundaries, selected text and UTF-16 positions |
+| `palette-navigation-test` | `Palette/PaletteState.swift`'s screen motions — `prepare`, `replace`, `push`, `pop`, restored-selection ownership |
 | `palette-selection-test` | `Features/PaletteRowIndex.swift` |
 | `interface-size-test` | `DesignSystem/InterfaceMetrics.swift`, `Features/Settings/InterfaceSize.swift`, `Extensions/Model/ExtensionFormMetrics.swift` |
 | `palette-placement-test` | `DesignSystem/Theme.swift`, `Palette/PalettePlacement.swift` |
 | `hotkey-test` | `HotKeys/Model/DoubleTapModifier.swift`, `DoubleTapDetector.swift`, `GlobeTapDetector.swift`, `HotKeyBinding.swift`, `HotKeySpelling.swift`, `HyperKey.swift`, `HotKeyAction.swift`, `Service/KeyShortcut.swift`, and the command→action mapping in `Launcher/Model/CommandID.swift` |
 | `app-switch-test` | `AppSwitcher/Model/` — recency head flip, filtering, both wrap directions, held-trigger recognition, autorepeat suppression, final-key release and cancellation |
-| `app-window-test` | Shipped app/window coordinators and session — Right drill-down, exact process scope, held Option expansion/release, ordinary Option-letter filtering, activation, back navigation, original palette restoration and permission denial (AX/app boundaries mocked) |
+| `app-window-test` | Shipped app/window coordinators and session — Right drill-down, process scope, held Option expansion/release, Option-letter filtering, activation, parent restoration from app switching and ordinary search, stopped/non-app guards and permission denial (AX/app boundaries mocked) |
 | `fallback-test` | `Launcher/Model/Fallback.swift`, plus the `CommandID` and `Quicklink` ids it is built from |
 | `contacts-test` | `Contacts/Model/ContactCard.swift`, `ContactSearch.swift` — card ranking by name, company and number, and the field filter |
 | `dictionary-test` | `Dictionary/Model/DictionaryEntry.swift`, `DictionaryMarkup.swift` — a real XHTML record and the plain-text fallback, read into page blocks |

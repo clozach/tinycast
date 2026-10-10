@@ -9,7 +9,7 @@ switcher and the pane the two share.
 Ships **off**. Settings › Navigation is the switch, and while it is off neither command is in the
 launcher and a still-recorded shortcut for either does nothing.
 
-The app switcher's **Right → app windows** path is available regardless of this switch.
+The app switcher and ordinary launcher search share **Right → app windows**, available regardless of this switch.
 That list begins with visible, unminimized windows of the selected process; holding Option
 adds hidden-app and minimized windows. The standalone command continues listing all apps
 and includes hidden/minimized windows without Option. See [app-switcher.md](app-switcher.md).

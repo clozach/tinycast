@@ -23,7 +23,7 @@ The palette becomes a list of open applications with the previous application se
 
 ## Windows of the selected app
 
-Press Right while the app list is open to browse the selected app's windows. This also works
+Press Right with the filter caret at the end to browse the selected app's windows. This also works
 while the summon chord's Command modifier remains down. Drilling into windows cancels
 release-to-switch, so releasing Command leaves the window list open.
 
@@ -36,13 +36,21 @@ shortcuts retain their normal behavior.
 
 Return opens the selected window. Option-Return works while hidden windows are included;
 Tinycast unhides the app, unminimizes the window if needed, and raises that window.
-Left with an empty filter returns to the app list, preserving its search and selection.
-With a nonempty filter, Left edits the search. Escape or activation unwinds the temporary
+Left at the start of the filter returns to the parent list, preserving its search and selection.
+An empty filter is already at both boundaries. Inside the text, arrows move the caret; selected
+text keeps its arrows to collapse the selection. Command/Option/Shift editing chords remain available;
+Option-Right at the end can open children with hidden windows included. Escape or activation unwinds the temporary
 app/window screens and restores the original palette state.
 
 The app row shows **Windows →** and its Actions menu has **Show Windows**. This drill-down
 is available independently of Settings → Navigation, which gates the standalone all-app
 **Switch Windows** command. Windows on other Spaces remain eligible.
+
+The same list opens from ordinary launcher search: summon once, type `saf` to select running
+Safari, then press Right at the end of `saf`. Its visible windows appear, with the same held-Option
+expansion, typing filter and Return restoration. Left at the start goes back to `saf` with Safari
+selected. A stopped app has no open windows and is not launched by Right. A running app's Actions
+menu also offers **Show Windows**.
 
 ## Selection visibility
 
@@ -77,6 +85,13 @@ monitor handles Shift variants and ordinary activity. A cancellable task samples
 modifier state every 16 milliseconds while the gesture is armed, because Carbon's chord-release
 event can mean that one modifier was released while the trigger key is still down. No additional
 event tap or permission is requested.
+
+`PalettePanel` reads the native field editor's insertion point and selection before AppKit consumes
+an arrow. `RootPaletteView` routes a trailing boundary to `PaletteScreen.showChildren`, implemented
+by both launcher and app-switcher screens; a leading boundary pops the palette stack. Inline argument
+fields retain their own focus ring. Menus, control lists and marked IME text retain keyboard ownership.
+`PaletteState` marks a restored frame so query/mode observers keep its selected row; subsequent
+typing resumes normal result landing.
 
 Modifier-only, double-tap and modifier-free bindings retain their existing behavior: they provide
 no continuously held chord to repeat. A fresh chord while Tinycast is already visible likewise

@@ -341,6 +341,11 @@ struct LauncherScreen: PaletteScreen {
         }
     }
 
+    func showChildren(at selection: Int, includingHidden: Bool) -> Bool {
+        guard let app = entry(at: selection) else { return false }
+        return core.windowSwitchCoordinator.showWindows(of: app, includingHidden: includingHidden)
+    }
+
     /// Offered only while the glyph picker is installed; its hotkey, if bound, opens it the same way.
     private func glyphSearchItem() -> [PopoverMenuItem] {
         guard let entry = core.extensionCoordinator.glyphSearchEntry else { return [] }

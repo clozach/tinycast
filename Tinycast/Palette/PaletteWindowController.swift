@@ -411,7 +411,9 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
         ) { [weak self] event in
             guard let self, self.panel?.isKeyWindow == true else { return event }
             if self.core.windowSwitchCoordinator.handle(event) { return nil }
-            if self.core.appSwitchCoordinator.handle(event) { return nil }
+            if self.core.appSwitchCoordinator.handle(event, atQueryEnd: self.panel?.queryCaretAtEnd == true) {
+                return nil
+            }
             return self.core.windowSwitchCoordinator.filteringEvent(event) ?? event
         }
         // Handled at the panel: a focused preview answers Escape before the palette's own handler.

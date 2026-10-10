@@ -1257,7 +1257,7 @@ struct RootPaletteView: View {
 
     /// Every reset lands here, so handlers that fire together agree in whatever order they run.
     private func land() {
-        if appSwitch.restoresHiddenPalette { return }
+        if appSwitch.restoresHiddenPalette || vm.restoresSelection { return }
         let landing = screen.landingSelection
         vm.selection = landing
         scroll = ScrollIntent(kind: landing == 0 ? .top : .center)
@@ -1382,10 +1382,22 @@ struct RootPaletteView: View {
     /// Right at an inline field's end and Left at its start continue the same ring as Tab.
     private func installHeaderArrowHandler(in window: NSWindow?) {
         guard let panel = window as? PalettePanel else { return }
-        panel.onHeaderFieldBoundaryArrow = { boundary in
-            guard !menuOpen, !vm.isControlListOpen, !isCollapsed,
-                let accessory = headerAccessory, !accessory.fieldNames.isEmpty
-            else { return false }
+        panel.onHeaderFieldBoundaryArrow = { boundary, event in
+            guard !menuOpen, !vm.isControlListOpen, !vm.isComposing else { return false }
+            if argumentFocused == nil {
+                switch boundary {
+                case .leading:
+                    if vm.pop(preservingScreenState: true) { return true }
+                case .trailing:
+                    let screen = screen
+                    if screen.showChildren(
+                        at: selection(in: screen), includingHidden: event.modifierFlags.contains(.option)) {
+                        return true
+                    }
+                }
+            }
+            guard !event.modifierFlags.contains(.option), !isCollapsed,
+                let accessory = headerAccessory, !accessory.fieldNames.isEmpty else { return false }
             switch boundary {
             case .leading:
                 // Query's left edge keeps its normal caret behavior; an argument moves back.

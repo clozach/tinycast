@@ -59,6 +59,13 @@ only the closure wiring; the behaviour is `PaletteCoordinator`'s.
 
 ## Screens
 
+At the search field's trailing caret boundary, Right opens the selected row's children when that
+screen supplies them. Running apps in ordinary search and the app switcher supply the same app-window
+list. At the leading boundary, Left returns to the parent frame with its query and selection intact.
+Arrows inside the text and arrows collapsing selected text continue editing; modified text-navigation
+chords retain their behavior. An empty query has both boundaries. Inline argument fields continue
+their Tab focus ring, and menus, control lists and IME composition keep ownership of their keys.
+
 `PaletteState` (mode / query / selection / `focusToken`) is the bridge between the panel and the app.
 Showing the palette calls `prepare(mode:)`, which resets state and bumps `focusToken` (a UUID) so the
 SwiftUI search field re-focuses. `prepare` is one of four motions over the screen — see
