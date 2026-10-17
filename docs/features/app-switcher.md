@@ -127,3 +127,27 @@ check the top edge too. Release all keys to switch, then repeat with
 Escape to return to A. In another gesture, press an arrow or type before releasing: the list stays
 open, and Return performs the switch. Reopen within the configured delay to check the original
 palette state survived.
+
+## Audio badge
+
+A running app that is playing sound shows a pulsing 🔊 in its row, in the app switcher, in the
+window list and in ordinary launcher results. A window list also marks the window that is playing.
+
+- **App level.** `AudioProcessReader` asks Core Audio which processes are running output
+  (`kAudioProcessPropertyIsRunningOutput`; no tap and no permission) and maps each to the app that
+  launched it with `responsibility_get_pid_responsible_for_pid`, so a browser's helper is the browser.
+  `AudioActivityMonitor` polls every 0.5 s while the palette is visible and stops when it hides.
+- **Window level.** `WindowAudioScanner` reads only a window's own controls, never its page: Chromium
+  names a playing tab "… - Audio playing"; Safari gives the playing tab a "Mute This Tab" button.
+  `AudioAttribution` turns the probes into rows: a marked window is `.window`; an app with no tab
+  strip marks every window `.app`; a browser whose tabs show no marker marks none, so the app row
+  alone says it is playing (a muted tab, or a browser that hides its tabs from accessibility).
+- The list re-reads every second while open, so a sound that starts or stops updates the badge.
+- The pulse is a made-up envelope (`AudioPulse`), not the signal; Reduce Motion holds it still.
+
+`audio-activity-test` covers the markers, the attribution rules, the envelope and a live reader smoke
+check. For a physical check, play audio in a Safari and a Chrome tab, minimize both windows, summon
+the launcher, type the browser's name and press Right (hold Option for minimized windows): only the
+playing window carries the speaker, and the app row carries it too. The held-trigger app list shares
+`AudioBadge` and the same monitor; its row was not driven with real held modifiers.
+

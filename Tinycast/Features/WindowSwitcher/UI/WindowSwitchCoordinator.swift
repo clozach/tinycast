@@ -11,6 +11,7 @@ final class WindowSwitchCoordinator {
     private unowned let core: AppCore
     /// Armed by a repeat press with its modifiers held: letting go switches, as ⌘Tab does.
     private var releaseMonitor: Any?
+    private var audioTask: Task<Void, Never>?
     private static let chordModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
 
     init(
@@ -51,6 +52,7 @@ final class WindowSwitchCoordinator {
         disarmSwitchOnRelease()
         let scope = WindowSwitchScope.application(id: app.id, name: app.name, includingHidden: includingHidden)
         session.present(WindowSwitchSweep.snapshot(ranks: [:], applicationID: app.id), scope: scope)
+        watchAudio()
         palette.pushCarryingQuery(mode: .switchWindows)
         palette.query = ""
         session.filter("")
@@ -149,6 +151,33 @@ final class WindowSwitchCoordinator {
             return
         }
         session.present(WindowSwitchSweep.snapshot(ranks: WindowZOrder.appRanks()))
+        watchAudio()
+    }
+
+    /// Re-reads which windows are audible while the list is up, since sound starts and stops.
+    private func watchAudio() {
+        audioTask?.cancel()
+        audioTask = Task { [weak self] in
+            var delay = Duration.milliseconds(300)
+            while !Task.isCancelled, let self, palette.isVisible, palette.mode == .switchWindows {
+                try? await Task.sleep(for: delay)
+                delay = .seconds(1)
+                await refreshAudio()
+            }
+        }
+    }
+
+    private func refreshAudio() async {
+        let targets = session.audioTargets(playing: core.audioActivity.playingProcessIDs)
+        let probes = await Task.detached(priority: .utility) {
+            targets.map { WindowAudioScanner.probe($0.window) }
+        }.value
+        var audio: [Int: AudioPlayback] = [:]
+        for indexes in Dictionary(grouping: targets.indices, by: { targets[$0].processID }).values {
+            let states = AudioAttribution.playback(of: indexes.map { probes[$0] }, appPlaying: true)
+            for (index, state) in zip(indexes, states) { audio[targets[index].handle] = state }
+        }
+        session.applyAudio(audio)
     }
 
     func activate(_ entry: WindowSwitchEntry) {

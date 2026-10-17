@@ -21,6 +21,25 @@ final class WindowSwitchSession {
 
     func element(for handle: Int) -> WindowSwitchSweep.Element? { elements[handle] }
 
+    /// The windows of apps that are playing, ready to scan off the main actor.
+    func audioTargets(playing: Set<pid_t>) -> [WindowAudioTarget] {
+        snapshot.compactMap { entry -> WindowAudioTarget? in
+            guard playing.contains(entry.processID), let element = elements[entry.handle] else { return nil }
+            return WindowAudioTarget(handle: entry.handle, processID: entry.processID, window: element.window)
+        }
+    }
+
+    func applyAudio(_ audio: [Int: AudioPlayback]) {
+        let next = snapshot.map { entry -> WindowSwitchEntry in
+            var entry = entry
+            entry.audio = audio[entry.handle] ?? .silent
+            return entry
+        }
+        guard next != snapshot else { return }
+        snapshot = next
+        applyQuery()
+    }
+
     func reset() {
         scope = .all
         snapshot = []

@@ -127,8 +127,13 @@ run menu-search-test       $L/SearchRelevance.swift \
                            Tinycast/Features/MenuSearch/Model/*.swift \
                            Tinycast/Features/MenuSearch/Service/*.swift
 run window-switch-test     $L/SearchRelevance.swift \
+                           Tinycast/Features/AudioActivity/Model/*.swift \
                            Tinycast/Features/WindowSwitcher/Model/*.swift
+run audio-activity-test    Tinycast/Features/AudioActivity/Model/*.swift \
+                           Tinycast/Features/AudioActivity/Service/AudioProcessReader.swift
 run app-window-test        $L/SearchRelevance.swift \
+                           Tinycast/Features/AudioActivity/Model/*.swift \
+                           Tinycast/Features/AudioActivity/Service/*.swift \
                            Tinycast/Features/WindowSwitcher/Model/*.swift \
                            Tinycast/Features/WindowSwitcher/Service/WindowSwitchSession.swift \
                            Tinycast/Features/WindowSwitcher/UI/WindowSwitchCoordinator.swift \

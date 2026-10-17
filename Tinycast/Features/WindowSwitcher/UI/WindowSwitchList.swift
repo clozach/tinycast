@@ -73,6 +73,7 @@ private struct WindowSwitchRow: View {
                 .truncationMode(.middle)
                 .tooltip(entry.displayTitle)
             Spacer(minLength: metrics.spacing.md)
+            if entry.audio.isAudible { AudioBadge(help: entry.audio.help) }
             Text(trailing)
                 .font(metrics.typography.rowTrailing)
                 .foregroundStyle(.secondary)

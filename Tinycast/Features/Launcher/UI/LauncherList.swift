@@ -269,6 +269,7 @@ private struct AppRow: View {
     @Environment(AliasStore.self) private var aliases
     /// Observed here rather than up in the list, so a ⌘ press re-renders rows and not the palette.
     @Environment(PaletteState.self) private var palette
+    @Environment(AudioActivityMonitor.self) private var audio
     @State private var hovered = false
 
     /// Selection wins over hover when a row is both; otherwise hover shows its fainter layer.
@@ -329,6 +330,7 @@ private struct AppRow: View {
                 }
             }
             Spacer()
+            if running, audio.isPlaying(bundleID: app.bundleID) { AudioBadge(help: AudioPlayback.app.help) }
             if let refresh = app.backgroundRefresh {
                 ExtensionRefreshIndicator(state: refresh)
                     .font(metrics.typography.rowTrailing)

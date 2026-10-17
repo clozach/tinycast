@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import Carbon.HIToolbox
 
 @main @MainActor struct AppWindowTests {
@@ -158,7 +159,7 @@ struct HotKeyBinding { let shortcut: KeyShortcut? }
     func unhide() { isHidden = false }
 }
 @MainActor enum WindowSwitchSweep {
-    struct Element { let app: FixtureApp; let application: Int; let window: Int }
+    struct Element { let app: FixtureApp; let application: Int; let window: AXUIElement }
     struct Snapshot { var entries: [WindowSwitchEntry]; var elements: [Int: Element] }
     static var lastApplicationID: Int32?
     static func snapshot(ranks: [Int32: Int], applicationID: Int32? = nil) -> Snapshot {
@@ -174,7 +175,7 @@ struct HotKeyBinding { let shortcut: KeyShortcut? }
                 iconStamp: 0, title: "Other", isMinimized: false, appRank: 1, processID: 43)
         ]
         return Snapshot(entries: entries, elements: Dictionary(uniqueKeysWithValues: entries.map {
-            ($0.handle, Element(app: FixtureApp(), application: 42, window: $0.handle))
+            ($0.handle, Element(app: FixtureApp(), application: 42, window: AXWindowAccess.fixtureWindow($0.handle)))
         }))
     }
 }
@@ -182,8 +183,19 @@ struct HotKeyBinding { let shortcut: KeyShortcut? }
 @MainActor enum AXWindowAccess {
     static var unminimized: [Int] = []
     static var focused: [Int] = []
-    static func unminimize(_ window: Int) -> Bool { unminimized.append(window); return true }
-    static func focus(_ window: Int, in application: Int, of app: FixtureApp) { focused.append(window) }
+    static var handles: [CFHashCode: Int] = [:]
+    static func fixtureWindow(_ handle: Int) -> AXUIElement {
+        let window = AXUIElementCreateApplication(pid_t(900_000 + handle))
+        handles[CFHash(window)] = handle
+        return window
+    }
+    static func unminimize(_ window: AXUIElement) -> Bool {
+        unminimized.append(handles[CFHash(window)] ?? -1)
+        return true
+    }
+    static func focus(_ window: AXUIElement, in application: Int, of app: FixtureApp) {
+        focused.append(handles[CFHash(window)] ?? -1)
+    }
 }
 @MainActor final class AppRecencyMonitor {
     func entries(initialID: Int32?) -> [AppSwitchEntry] {
@@ -210,6 +222,7 @@ struct HotKeyBinding { let shortcut: KeyShortcut? }
     let palette = PaletteState()
     let hotKeys = HotKeys()
     let windowSwitch = WindowSwitchSession()
+    let audioActivity = AudioActivityMonitor()
     let settings = AppSettings()
     let appIndex = AppIndex()
     let sendToCoordinator = SendToCoordinator()

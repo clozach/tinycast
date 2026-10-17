@@ -43,6 +43,7 @@ struct AppSwitchList: View {
 
 private struct AppSwitchRow: View {
     @Environment(\.metrics) private var metrics
+    @Environment(AudioActivityMonitor.self) private var audio
     let entry: AppSwitchEntry
     let selected: Bool
     @State private var hovered = false
@@ -58,6 +59,7 @@ private struct AppSwitchRow: View {
                 .lineLimit(1)
                 .tooltip(entry.name)
             Spacer(minLength: metrics.spacing.md)
+            if audio.isPlaying(processID: entry.id) { AudioBadge(help: AudioPlayback.app.help) }
             if selected {
                 Text("Windows →")
                     .font(metrics.typography.rowTrailing)

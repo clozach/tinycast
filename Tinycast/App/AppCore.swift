@@ -52,6 +52,7 @@ final class AppCore {
     let frequentEmoji = FrequentEmojiStore()
     let pinnedEmoji = PinnedEmojiStore()
     let runningApps = RunningAppsMonitor()
+    let audioActivity = AudioActivityMonitor()
     let appRecency = AppRecencyMonitor()
     let palette = PaletteState()
     let fileSearch = FileSearchSession()

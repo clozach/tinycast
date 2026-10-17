@@ -89,6 +89,7 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
             // Events go stale while the palette is closed, and the countdown only ticks while up.
             core.calendarCoordinator.paletteDidShow()
             core.palette.noteVisible(true)
+            core.audioActivity.start()
             core.clipboardStore.setTextSearchActive(true)
             // Only while we are on screen: a system-wide tap has no business outliving the window.
             commandEscapeTap.enable()
@@ -159,6 +160,7 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
         core.calendarCoordinator.paletteDidHide()
         core.roomCoordinator.paletteDidHide()
         core.palette.noteVisible(false)
+        core.audioActivity.stop()
         core.clipboardStore.setTextSearchActive(false)
         // Drop the anchor, so the next summon re-resolves for the screen in use then.
         anchor = nil

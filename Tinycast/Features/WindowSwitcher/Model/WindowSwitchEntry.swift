@@ -14,6 +14,7 @@ struct WindowSwitchEntry: Identifiable, Hashable, Sendable {
     let appRank: Int
     var processID: Int32 = 0
     var isAppHidden: Bool = false
+    var audio: AudioPlayback = .silent
 
     /// A string, because every palette list identifies its rows by one.
     var id: String { String(handle) }
