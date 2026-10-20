@@ -17,6 +17,7 @@ struct QuicklinkCoordinatorTests {
         try await hotKeySelectedText()
         try await hotKeySelectedTextTargets()
         try await hotKeyCopiesOnce()
+        try await legacySelectionFallback()
         try await plainLink()
         try copying()
         try editing()
@@ -198,6 +199,74 @@ struct QuicklinkCoordinatorTests {
         expect(
             both.injector.copies == 1 && both.core.messages == ["Couldn’t get the selected text"],
             "one shortcut press sends at most one ⌘C")
+    }
+
+    static func legacySelectionFallback() async throws {
+        let ask = try Fixture()
+        defer { ask.cleanUp() }
+        ask.settings.quicklinkSelectionFallback = .ask
+        expect(
+            ask.accessory()?.fieldNames == ["Selected Text"],
+            "the old ask preference keeps its selected-text field")
+        expect(
+            ask.accessory()?.firstIncompleteField == nil,
+            "a readable selection can satisfy the old field without typing")
+        ask.coordinator.openQuicklink(id: ask.link.id)
+        try await Task.sleep(for: .milliseconds(1))
+        expect(
+            ask.palette.shows == 1 && ask.core.messages.isEmpty && ask.injector.copies == 1,
+            "an unreadable selection with the old ask preference returns to its field")
+        ask.core.palette.commandArguments[
+            PaletteState.argumentKey(ask.link.entryID, "Selected Text")] = "typed & text"
+        let values = QuicklinkArgumentsAccessory.values(for: ask.link, vm: ask.core.palette)
+        ask.coordinator.openQuicklink(id: ask.link.id, values: values)
+        await waitForOpen()
+        expect(
+            QuicklinkLauncher.opened.first?.link == "https://example.com/?q=typed%20%26%20text",
+            "the old selected-text field supplies the selection placeholder")
+        expect(ask.injector.copies == 1, "a typed fallback does not copy again")
+
+        let override = try Fixture()
+        defer { override.cleanUp() }
+        override.settings.quicklinkSelectionFallback = .ask
+        override.coordinator.openQuicklink(id: override.link.id, forcingDefaultApp: true)
+        try await Task.sleep(for: .milliseconds(1))
+        override.coordinator.openQuicklink(
+            id: override.link.id, values: ["Selected Text": "typed"])
+        await waitForOpen()
+        expect(
+            QuicklinkLauncher.opened.first?.app == nil,
+            "the default-app override survives the legacy selected-text prompt")
+
+        let named = try Fixture(
+            link: "https://example.com/?q={argument name=\"Selected Text\"}&selection={selection}")
+        defer { named.cleanUp() }
+        named.settings.quicklinkSelectionFallback = .ask
+        expect(
+            named.accessory()?.fieldNames == ["Selected Text"],
+            "an existing argument named Selected Text is not offered twice")
+
+        let clipboard = try Fixture()
+        defer { clipboard.cleanUp() }
+        clipboard.settings.quicklinkSelectionFallback = .clipboard
+        clipboard.coordinator.openQuicklink(id: clipboard.link.id)
+        await waitForOpen()
+        expect(
+            QuicklinkLauncher.opened.first?.link == "https://example.com/?q=clipboard%20text",
+            "the old clipboard fallback still supplies an unreadable selection")
+        expect(clipboard.injector.copies == 0, "the chosen clipboard fallback needs no copy")
+        expect(clipboard.accessory() == nil, "the clipboard fallback adds no argument field")
+
+        let both = try Fixture(link: "https://example.com/?q={argument}&selection={selection}")
+        defer { both.cleanUp() }
+        both.settings.quicklinkSelectionFallback = .ask
+        both.settings.quicklinkPassesSelectedText = true
+        both.injector.selection = "readable"
+        both.coordinator.openQuicklinkFromHotKey(id: both.link.id)
+        await waitForOpen()
+        expect(
+            QuicklinkLauncher.opened.first?.link == "https://example.com/?q=readable&selection=readable",
+            "the legacy fallback and new hotkey selected-text preference remain independent")
     }
 
     static func plainLink() async throws {
@@ -382,6 +451,7 @@ struct QuicklinkCoordinatorTests {
 final class AppSettings {
     var quicklinksEnabled = true
     var quicklinksShowInLauncher = true
+    var quicklinkSelectionFallback: QuicklinkSelectionFallback?
     var quicklinkPassesSelectedText = false
     var quicklinkOpensNewWindow = false
     var quicklinkConfirmsBeforeDelete = false

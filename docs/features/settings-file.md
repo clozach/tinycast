@@ -10,7 +10,8 @@ in `Features/Settings/` (`Model/`, `Service/`, `SettingsFileSchema.swift`), the 
 
 - **`UserDefaults` is the store; the file is a mirror.** Every value keeps its `AppSettingsKey` and its
   `didSet`, and the file reads and writes through the same properties. Turning the file on or off,
-  deleting it, or updating the app never loses a setting, so there is nothing to migrate.
+  deleting it, or updating the app never loses a setting. Older key spellings remain readable when
+  their meaning differs from a newer preference.
 - **Off by default, and only the pane turns it on.** `settingsFileEnabled` has no key in the file and is
   excluded from backups: a file or an import must never switch on something that reads a file.
 - **A capability grant never has a key.** Snippets, Extensions, Calendar access, Auto Join, Camera
@@ -127,6 +128,25 @@ Where a number has a special case, the case is a word:
 | `calendar.hideCurrentEventAfterMinutes` | `"never"`, 0 (as it starts), 5, 10, 30 |
 | `windowManagement.gap` | 0 to 64 |
 | `snippets.folder`, `notes.folder` | an absolute or `~/` path, or `null` for Application Support |
+
+## Older Quicklink preferences
+
+`quicklinks.selectionFallback` remains readable as `"ask"`, `"clipboard"` or `null`. It controls what
+an unreadable `{selection}` uses: **ask** keeps the editable Selected Text field, **clipboard** uses
+the captured clipboard, and **null** follows upstream's selection-only behavior and reports a failed
+read. The persisted `quicklinkSelectionFallback` preference and settings backups keep the same values.
+Fresh installations use `null`.
+
+This is independent of `quicklinks.passesSelectedText`, which fills an `{argument}` from selected text
+only when the Quicklink's own shortcut runs. An older file containing `selectionFallback` must not
+change that Boolean or report an unknown setting.
+
+To check compatibility, use an isolated preferences domain and a Quicklink such as
+`https://example.com/?q={selection}`. Import a settings file with `{"quicklinks":{"selectionFallback":"ask"}}`;
+with no readable selection, opening the link returns to a Selected Text field, whose typed value opens
+the URL. Change the value to `"clipboard"` and the captured clipboard supplies the placeholder instead.
+A readable selection takes precedence. Existing files are left formatted as written until an app-side
+setting change rewrites the mirror.
 
 ## Shortcut chords
 

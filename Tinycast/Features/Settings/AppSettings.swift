@@ -662,6 +662,14 @@ final class AppSettings {
         }
     }
 
+    var quicklinkSelectionFallback: QuicklinkSelectionFallback? {
+        didSet {
+            defaults.set(
+                quicklinkSelectionFallback?.rawValue,
+                forKey: Key.quicklinkSelectionFallback.rawValue)
+        }
+    }
+
     var quicklinkPassesSelectedText: Bool {
         didSet {
             defaults.set(
@@ -914,6 +922,8 @@ final class AppSettings {
             || defaults.bool(forKey: Key.quicklinksShowInLauncher.rawValue)
         appleShortcutsEnabled = defaults.bool(forKey: Key.appleShortcutsEnabled.rawValue)
         quicklinkOpensNewWindow = defaults.bool(forKey: Key.quicklinkOpensNewWindow.rawValue)
+        quicklinkSelectionFallback = defaults.string(forKey: Key.quicklinkSelectionFallback.rawValue)
+            .flatMap(QuicklinkSelectionFallback.init)
         quicklinkPassesSelectedText = defaults.bool(
             forKey: Key.quicklinkPassesSelectedText.rawValue)
         quicklinkConfirmsBeforeDelete =

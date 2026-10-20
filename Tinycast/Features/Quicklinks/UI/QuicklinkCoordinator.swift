@@ -153,6 +153,16 @@ final class QuicklinkCoordinator {
     private func open(_ attempt: OpenAttempt) {
         var attempt = attempt
         let quicklink = attempt.quicklink
+        if attempt.context.selection.isEmpty {
+            switch settings.quicklinkSelectionFallback {
+            case .ask:
+                attempt.context.selection = attempt.values[Self.selectionArgumentName] ?? ""
+            case .clipboard:
+                attempt.context.selection = attempt.context.clipboardHistory.first ?? ""
+            case nil:
+                break
+            }
+        }
         let encoding: SnippetTemplateEngine.ValueEncoding =
             QuicklinkDestination.usesURLEncoding(quicklink.link) ? .percentEncoding : .none
         // The override outlives the trip through the fields, so it is honoured on the way back.
@@ -173,11 +183,32 @@ final class QuicklinkCoordinator {
             return
         }
         // An empty `{selection}` fails rather than opening a search for nothing.
-        guard let app = attempt.copySource else { return reportMissingSelection() }
+        guard let app = attempt.copySource else {
+            if settings.quicklinkSelectionFallback == .ask {
+                pendingDefaultAppOverride = attempt.forcingDefaultApp ? quicklink.id : nil
+                promptForArguments(quicklink, values: attempt.values)
+            } else {
+                reportMissingSelection()
+            }
+            return
+        }
         Task {
             guard let copied = await copyingSelection(into: attempt, from: app) else { return }
             open(copied)
         }
+    }
+
+    static let selectionArgumentName = "Selected Text"
+
+    func promptedArguments(for quicklink: Quicklink) -> [SnippetTemplateEngine.DeclaredArgument] {
+        var arguments = SnippetTemplateEngine.declaredArguments(in: quicklink.link)
+        if settings.quicklinkSelectionFallback == .ask,
+            SnippetTemplateEngine.usesSelection(quicklink.link),
+            !arguments.contains(where: { $0.name == Self.selectionArgumentName })
+        {
+            arguments.append(.init(name: Self.selectionArgumentName, options: [], isOptional: true))
+        }
+        return arguments
     }
 
     private func copyingSelection(

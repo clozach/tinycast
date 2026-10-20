@@ -11,6 +11,7 @@ struct SettingsFileTest {
         testValues()
         testFormat()
         testParseIssues()
+        testLegacyQuicklinkSettings()
         try await testRepository()
         try testCommit()
         try testReplace()
@@ -184,6 +185,44 @@ struct SettingsFileTest {
             SettingsFileIssue.summary([.unknownSetting("a.b"), .unwritable])
                 == "settings.json: unknown setting “a.b” (+1 more)")
         check("no issues, no HUD", SettingsFileIssue.summary([]) == nil)
+    }
+
+    enum SelectionFallback: String, CaseIterable, SettingsFileRawValue {
+        case ask, clipboard
+    }
+
+    @Observable
+    final class QuicklinkFixture {
+        var fallback: SelectionFallback?
+        var passesSelectedText = false
+    }
+
+    private static func testLegacyQuicklinkSettings() {
+        let fixture = QuicklinkFixture()
+        let fallback = SettingsFileBinding(.quicklinkSelectionFallback, fixture, \.fallback)
+        let selectedText = SettingsFileBinding(
+            .quicklinkPassesSelectedText, fixture, \.passesSelectedText)
+        for value in ["ask", "clipboard"] {
+            let text = """
+                {"quicklinks":{"selectionFallback":"\(value)","passesSelectedText":true}}
+                """
+            let parsed = try? SettingsFileFormat.parse(Data(text.utf8))
+            check("the old \(value) key is recognized", parsed?.issues.isEmpty == true)
+            let issues = parsed?.values.flatMap { key, value in
+                key == .quicklinkSelectionFallback ? fallback.write(value) : selectedText.write(value)
+            }
+            check("the old \(value) value applies", issues?.isEmpty == true)
+            check(
+                "the old \(value) intent stays independent of selected-text passing",
+                fixture.fallback?.rawValue == value && fixture.passesSelectedText)
+        }
+        check(
+            "an invalid old fallback keeps the saved choice",
+            fallback.write("invalid") == [.invalidValue(.quicklinkSelectionFallback)]
+                && fixture.fallback == .clipboard)
+        check(
+            "null selects upstream's missing-selection behavior",
+            fallback.write(.null).isEmpty && fixture.fallback == nil)
     }
 
     // MARK: - Repository

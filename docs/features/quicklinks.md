@@ -100,7 +100,7 @@ to the palette and are described in
 [palette.md](palette.md#inline-row-arguments); what quicklinks own is which fields appear and what an
 answer means.
 
-The fields are exactly the `{argument}`s the link declares, read straight off the template by
+By default, the fields are the `{argument}`s the link declares, read straight off the template by
 `SnippetTemplateEngine.declaredArguments(in:)` — a pure parse, so nothing is expanded and no clipboard
 is read to draw a chip. An argument with a `default=` is still offered, as an optional chip: left
 empty, the default fills it, so a default is a starting value rather than a fixed one. It stays owed
@@ -113,7 +113,7 @@ given the row's identity, so that memory starts clean on the next quicklink. The
 glyph, then the chips, right after the typed text — and `.besideSearchField` on Search Quicklinks,
 where the field stays a filter with its prompt intact and the row below already carries the glyph.
 
-**`{selection}` is never a field, and an empty one fails.** It is read when the link opens, after
+**By default, `{selection}` is not a field, and an empty one fails.** It is read when the link opens, after
 every owed argument is in, through the two tiers in
 [quick-actions.md](quick-actions.md#reading-the-selection): Accessibility, then a ⌘C. The ⌘C is sent
 at most once per open, only when the expansion reads `{selection}`, and with the palette hidden
@@ -140,6 +140,12 @@ keyed by the quicklink it applies to.
 quicklink in the `Use “…” with…` section (see [launcher.md](launcher.md#fallbacks));
 `openQuicklink(id:filling:)` assigns the query to the first argument still owed — the first declared
 one when every argument has a default — and opens at once when that was the only one owed.
+
+Older preferences keep `quicklinks.selectionFallback`: `"ask"` offers an optional **Selected Text**
+field and returns there if both selection reads fail; typing into it supplies `{selection}` when the
+selection is unreadable. `"clipboard"` substitutes the captured clipboard when the initial read is empty.
+A readable selection wins over either fallback. `null`, the default for a fresh installation, keeps the
+selection-only behavior above. This preference is independent of passing selected text into an argument.
 
 **Pass selected text as argument** (off by default) lets a quicklink's **own shortcut** fill its
 **first** argument with the trimmed selection, read through the same two tiers. It applies only when
