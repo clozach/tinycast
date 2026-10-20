@@ -133,7 +133,8 @@ struct WindowLayoutTests {
         custom.iconSymbol = "star"
         expect(custom.symbol == "star", "a chosen glyph wins")
 
-        expect(layout(entries: [entry()]).summary == "1 window", "one entry reads singular")
+        // The singular is the catalog's plural variation, which the harness does not load.
+        expect(layout(entries: [entry(), entry()]).summary == "2 windows", "entries are counted")
         let two = layout(entries: [entry(display: 1), entry(display: 2)])
         expect(two.summary == "2 windows · 2 displays", "two displays are named")
         let same = layout(entries: [entry(display: 1), entry(display: 1)])
@@ -405,7 +406,9 @@ struct WindowLayoutTests {
         expect(
             plan.skipped.first?.reason == .displayDisconnected(name: "Display 2"),
             "the skip names the stored display")
-        expect(plan.skippedSummary == "1 display not connected", "the summary names the cause")
+        expect(
+            plan.skippedSummary == String(localized: "\(1) displays not connected"),
+            "the summary names the cause")
 
         let none = WindowLayoutPlan.make(
             layout: value, screens: [], windows: [], preferredGap: 0)
@@ -564,12 +567,12 @@ struct WindowLayoutTests {
     // MARK: - Store
 
     static func withStore(_ body: (WindowLayoutStore) -> Void) {
-        let name = "tinycast-window-layout-test-\(UUID().uuidString)"
+        let name = scratchSuiteName("window-layout-test")
         guard let defaults = UserDefaults(suiteName: name) else {
             expect(false, "a scratch defaults suite opens")
             return
         }
-        defer { defaults.removePersistentDomain(forName: name) }
+        defer { discardSuite(name, defaults) }
         body(WindowLayoutStore(defaults: defaults))
     }
 
@@ -675,11 +678,11 @@ struct WindowLayoutTests {
     }
 
     static func storePersistence() {
-        let name = "tinycast-window-layout-test-\(UUID().uuidString)"
+        let name = scratchSuiteName("window-layout-test")
         guard let defaults = UserDefaults(suiteName: name) else {
             return expect(false, "a scratch defaults suite opens")
         }
-        defer { defaults.removePersistentDomain(forName: name) }
+        defer { discardSuite(name, defaults) }
 
         var stored: WindowLayout?
         do {
@@ -908,11 +911,11 @@ struct WindowLayoutTests {
     }
 
     static func withCustomSizeStore(_ body: (UserDefaults) -> Void) {
-        let name = "tinycast-custom-window-size-test-\(UUID().uuidString)"
+        let name = scratchSuiteName("custom-window-size-test")
         guard let defaults = UserDefaults(suiteName: name) else {
             return expect(false, "a scratch defaults suite opens")
         }
-        defer { defaults.removePersistentDomain(forName: name) }
+        defer { discardSuite(name, defaults) }
         body(defaults)
     }
 

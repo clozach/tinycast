@@ -1,5 +1,3 @@
-// MCP's pure half: the wire framing, the names that route a call, trust, and what a chat addresses.
-
 import Foundation
 
 @main
@@ -207,12 +205,12 @@ struct MCPTests {
     }
 
     static func settingsPersistAndKeepHandlesApart() {
-        let suite = "mcp-test-\(UUID().uuidString)"
+        let suite = scratchSuiteName("mcp-test")
         guard let defaults = UserDefaults(suiteName: suite) else {
             expect(false, "the harness can open its own defaults")
             return
         }
-        defer { defaults.removePersistentDomain(forName: suite) }
+        defer { discardSuite(suite, defaults) }
 
         let store = MCPSettingsStore(defaults: defaults)
         store.save(
@@ -240,7 +238,6 @@ struct MCPTests {
         expect(store.servers.count == 1, "removal takes exactly one")
     }
 
-    /// The same servers, shaped for the routes whose own client runs them.
     static func serversBecomeWhatACLICanRunItself() {
         var remote = MCPServer(
             name: "Linear", slug: "linear",

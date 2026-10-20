@@ -7,7 +7,6 @@ struct PaletteFrame: Equatable {
     let selection: Int
 }
 
-/// Palette state shared between the panel's SwiftUI tree and the coordinator.
 @MainActor
 @Observable
 final class PaletteState {
@@ -15,6 +14,7 @@ final class PaletteState {
     /// The screens below `mode`, innermost last: a summon starts a new one, navigating pushes on.
     private(set) var backStack: [PaletteFrame] = []
     var query: String = "" { didSet { restoredFrame = nil } }
+    var restoredSelection: Int? { restoredFrame?.selection }
     var selection: Int = 0
     @ObservationIgnored private var restoredFrame: PaletteFrame?
     var restoresSelection: Bool {
@@ -22,18 +22,16 @@ final class PaletteState {
     }
     /// True while an IME holds marked text, which leaves `query` empty. The panel publishes it.
     var isComposing = false
-    /// The clipboard screen's type filter, reset with the rest of the screen state on each summon.
-    var clipboardFilter: ClipboardFilter = .all
-    /// The file search screen's type filter, reset on each summon like the clipboard's.
+    var clipboardFilter: ClipboardFilter = .all {
+        didSet { if oldValue != clipboardFilter { restoredFrame = nil } }
+    }
+    var fileSearchQuickLook = false
     var fileSearchFilter: FileSearchFilter = .all
-    /// The emoji picker's visible category, reset with the rest of a freshly opened screen.
     var emojiCategoryFilter: EmojiCategoryFilter = .all
     /// The card the contact-fields screen shows; set before that screen is pushed.
     var contactID: String?
     /// Nil means the configured default; zoom only overrides it for this picker session.
     var emojiGridColumnsOverride: EmojiGridColumns?
-    /// Whether file search draws its Quick Look overlay; it follows whatever row is selected.
-    var fileSearchQuickLook = false
     /// Ordering out leaves the SwiftUI tree mounted, so a media preview needs this to stop playing.
     private(set) var isVisible = false
     /// Changes every time the palette is shown so the search field can re-focus.
@@ -42,15 +40,15 @@ final class PaletteState {
     var resetToken = UUID()
     /// Bumped when an action reorders the list, so the highlight scrolls back into view.
     var followToken = UUID()
+    /// Bumped when an action rewrites the query, so the field lands with the caret after it.
+    private(set) var queryRewriteToken = UUID()
     /// AppKit binds ⌘. to `cancelOperation:`, so the field editor eats it before `onKeyPress`.
     private(set) var pinChordToken = UUID()
     /// Bumped when AppKit resolves ⌘1…⌘0 to a slot index from the physical number row.
     private(set) var favoriteSlotToken = UUID()
-    /// The last slot index from `noteFavoriteSlot`, consumed by the SwiftUI layer.
     private(set) var favoriteSlotIndex: Int?
     /// Bumped for ⌘0 / ⌘+ / ⌘-, which the panel claims before the field editor can.
     private(set) var emojiGridZoomToken = UUID()
-    /// The last zoom from `noteEmojiGridZoom`, consumed by the SwiftUI layer.
     private(set) var emojiGridZoom: EmojiGridZoom?
     /// Set by the compact bar's overflow to expand without a query; cleared by `prepare`.
     var forceExpanded = false
@@ -90,13 +88,11 @@ final class PaletteState {
 
     func noteVisible(_ visible: Bool) {
         isVisible = visible
-        // Ordering out leaves the tree mounted, and a preview must not outlive the window.
         if !visible { fileSearchQuickLook = false }
     }
 
     var canGoBack: Bool { !backStack.isEmpty }
 
-    /// Open `mode` as the root: a fresh screen with nothing behind it to go back to.
     func prepare(mode: PaletteMode) {
         backStack.removeAll()
         replace(mode: mode)
@@ -108,13 +104,13 @@ final class PaletteState {
         resetToken = UUID()
     }
 
-    /// Open `mode` over the current screen, which a back step returns to.
     func push(mode: PaletteMode) {
-        backStack.append(PaletteFrame(mode: self.mode, query: query, selection: selection))
+        if !self.mode.isNativeEditor {
+            backStack.append(PaletteFrame(mode: self.mode, query: query, selection: selection))
+        }
         replace(mode: mode)
     }
 
-    /// Restore the screen underneath, false when this one is the root.
     func pop(preservingScreenState: Bool = false) -> Bool {
         guard let frame = backStack.popLast() else { return false }
         if preservingScreenState { mode = frame.mode } else { openScreen(frame.mode) }
@@ -156,9 +152,9 @@ final class PaletteState {
         argumentEntryID = nil
         clipboardFilter = .all
         fileSearchFilter = .all
+        fileSearchQuickLook = false
         emojiCategoryFilter = .all
         emojiGridColumnsOverride = nil
-        fileSearchQuickLook = false
         forceExpanded = false
         dropHoverHighlight()
         menuOpen = false
@@ -180,6 +176,15 @@ final class PaletteState {
 
     func noteMenuPresentation() {
         menuPresentationToken = UUID()
+    }
+
+    func rewriteQuery(_ text: String) {
+        query = text
+        queryRewriteToken = UUID()
+    }
+
+    func preserveSelection() {
+        restoredFrame = PaletteFrame(mode: mode, query: query, selection: selection)
     }
 
     func noteFavoriteSlot(_ index: Int) {
@@ -207,7 +212,6 @@ final class PaletteState {
         }
     }
 
-    /// Set by whichever screen hands the keyboard to a control of its own.
     func noteEditingField(_ editing: Bool) {
         guard editing != isEditingField else { return }
         isEditingField = editing
@@ -224,7 +228,6 @@ final class PaletteState {
         controlListDismissToken = UUID()
     }
 
-    /// The pointer moved, which re-lights the highlight once it has cleared the arming slop.
     func notePointerMoved(to location: CGPoint) {
         guard !hoverHighlightArmed, HoverArming.isDeliberate(location, from: hoverAnchor) else {
             return

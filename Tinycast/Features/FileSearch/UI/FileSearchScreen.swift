@@ -14,9 +14,11 @@ struct FileSearchScreen: PaletteScreen {
         vm.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    private var indexer: FileIndexer { core.fileIndexer }
+
     var primaryActionTitle: String {
-        guard let result = result(at: vm.selection) else { return "Open File" }
-        return result.isDirectory ? "Open Folder" : "Open File"
+        guard let result = result(at: vm.selection) else { return String(localized: "Open File") }
+        return result.isDirectory ? String(localized: "Open Folder") : String(localized: "Open File")
     }
 
     private func result(at selection: Int) -> FileSearchResult? {
@@ -27,10 +29,13 @@ struct FileSearchScreen: PaletteScreen {
         result(at: selection).map { .files([$0.url]) }
     }
 
+    func hasActions(at selection: Int) -> Bool { result(at: selection) != nil }
+
     func actions(at selection: Int) -> PopoverMenuContent? {
         guard let result = result(at: selection) else { return nil }
         return FileSearchActionsMenu.content(
-            result: result, core: core, vm: vm, target: vm.pasteTarget)
+            result: result, core: core, target: vm.pasteTarget,
+            quickLook: { vm.fileSearchQuickLook = true })
     }
 
     func activate(at selection: Int) {
@@ -45,60 +50,43 @@ struct FileSearchScreen: PaletteScreen {
     }
 
     func perform(_ shortcut: PaletteShortcut, at selection: Int) -> Bool {
-        switch shortcut {
-        case .copyFile: return run(.copyFile, at: selection)
-        case .copyName: return run(.copyName, at: selection)
-        case .copyPath: return run(.copyPath, at: selection)
-        case .pasteFile: return run(.pasteFile, at: selection)
-        case .quickLook: return toggleQuickLook(at: selection)
-        // No ⌃⇧X here: there is no "all" to trash, only the row under the selection.
-        case .delete: return trash(at: selection)
-        default: return false
-        }
-    }
-
-    /// ⌃X — mirrors the Actions row, as the clipboard's delete does; trashing asks nothing first.
-    private func trash(at selection: Int) -> Bool {
         guard let result = result(at: selection) else { return false }
-        core.fileSearchCoordinator.trash(result)
-        return true
-    }
-
-    /// ⌘Y — the overlay follows the selection, so toggling is all the state it needs.
-    private func toggleQuickLook(at selection: Int) -> Bool {
-        guard result(at: selection) != nil else { return false }
-        vm.fileSearchQuickLook.toggle()
-        return true
-    }
-
-    /// ⇧⌘C / ⌥⌘C / ⌃⌘C / ⇧⌘V — the pasteboard rows, each on the selection the menu would act on.
-    private func run(_ action: FileSearchPasteboardAction, at selection: Int) -> Bool {
-        guard let result = result(at: selection) else { return false }
-        let coordinator = core.fileSearchCoordinator
-        switch action {
-        case .copyFile: coordinator.copyFile(result)
-        case .copyName: coordinator.copyName(result)
-        case .copyPath: coordinator.copyPath(result)
-        case .pasteFile: coordinator.pasteFile(result)
+        if shortcut == .quickLook {
+            vm.fileSearchQuickLook.toggle()
+            return true
         }
-        return true
+        return FileSearchActionsMenu.perform(shortcut, result: result, core: core)
     }
 
     func body(selection: Int, scroll: ScrollIntent) -> AnyView {
-        AnyView(content(selection: selection, scroll: scroll))
+        AnyView(
+            VStack(spacing: 0) {
+                content(selection: selection, scroll: scroll)
+                HStack {
+                    if indexer.access == .limited {
+                        Text("Searching readable folders. Protected folders need Full Disk Access.")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Privacy Settings…") {
+                            core.fileSearchCoordinator.openFullDiskAccessSettings()
+                        }
+                        .font(.caption)
+                    }
+                }
+                .padding(.horizontal, metrics.spacing.md)
+                .frame(height: 28)
+            })
     }
 
     @ViewBuilder
     private func content(selection: Int, scroll: ScrollIntent) -> some View {
-        if session.state == .failed {
-            EmptyResults(text: "File search is unavailable")
-        } else if rows.isEmpty {
+        if rows.isEmpty {
             emptyState
         } else {
             let selected = result(at: selection)
             HStack(spacing: 0) {
                 FileSearchList(
-                    title: isShowingRecents ? "Recently Used" : "Results",
+                    title: isShowingRecents ? String(localized: "Recent") : String(localized: "Results"),
                     results: rows,
                     selectedID: selected?.id,
                     scroll: scroll,
@@ -127,63 +115,88 @@ struct FileSearchScreen: PaletteScreen {
     /// Nothing is said while a query runs: the rows it replaces would only flash a message.
     @ViewBuilder
     private var emptyState: some View {
-        if session.state != .ready {
+        if !indexer.hasIndex, case .building(let items) = indexer.status {
+            EmptyResults(
+                text: String(localized: "Indexing your search folders…"),
+                detail: String(
+                    localized: "\(items.formatted()) items so far. Results appear when it finishes."),
+                systemImage: "externaldrive")
+        } else if !indexer.hasIndex, indexer.status == .failed {
+            EmptyResults(
+                text: String(localized: "Couldn’t build the file index"),
+                detail: String(localized: "Try Rebuild Index in Settings ▸ File Search."),
+                systemImage: "exclamationmark.triangle")
+        } else if session.state != .ready {
             Color.clear
         } else if isShowingRecents {
-            EmptyResults(text: "Type to search files and folders")
+            EmptyResults(text: String(localized: "Type to search files and folders"))
         } else {
             EmptyResults(text: vm.fileSearchFilter.emptyMessage)
         }
     }
 }
 
-enum FileSearchPasteboardAction {
-    case copyFile
-    case copyName
-    case copyPath
-    case pasteFile
-}
-
 @MainActor
 enum FileSearchActionsMenu {
     static func content(
-        result: FileSearchResult, core: AppCore, vm: PaletteState, target: PasteTarget?
+        result: FileSearchResult, core: AppCore, target: PasteTarget?,
+        quickLook: (() -> Void)? = nil
     ) -> PopoverMenuContent {
         let coordinator = core.fileSearchCoordinator
-        return PopoverMenuContent(
-            header: result.name,
-            items: [
+        var items = [
+            PopoverMenuItem(
+                title: result.isDirectory ? String(localized: "Open Folder") : String(localized: "Open File"),
+                systemImage: result.isDirectory ? "folder" : "doc", shortcut: "↵"
+            ) { coordinator.open(result) },
+            PopoverMenuItem(
+                title: String(localized: "Show in Finder"), systemImage: "folder", shortcut: "⌘↵"
+            ) { coordinator.showInFinder(result) }
+        ]
+        if let quickLook {
+            items.append(
                 PopoverMenuItem(
-                    title: result.isDirectory ? "Open Folder" : "Open File",
-                    systemImage: result.isDirectory ? "folder" : "doc", shortcut: "↵"
-                ) { coordinator.open(result) },
-                PopoverMenuItem(
-                    title: "Show in Finder", systemImage: "folder", shortcut: "⌘↵"
-                ) { coordinator.showInFinder(result) },
-                PopoverMenuItem(title: "Quick Look", systemImage: "eye", shortcut: "⌘Y") {
-                    vm.fileSearchQuickLook = true
-                },
-                PopoverMenuItem(title: "Share…", systemImage: "square.and.arrow.up") {
-                    coordinator.share(result)
-                },
-                PopoverMenuItem(
-                    title: "Copy File", systemImage: "doc.on.clipboard", startsSection: true,
-                    shortcut: "⇧⌘C"
-                ) { coordinator.copyFile(result) },
-                PopoverMenuItem(
-                    title: target.map { "Paste File to \($0.name)" } ?? "Paste File",
-                    icon: .paste(target, fallback: "doc.on.clipboard"), shortcut: "⇧⌘V"
-                ) { coordinator.pasteFile(result) },
-                PopoverMenuItem(
-                    title: "Copy Name", systemImage: "doc.on.clipboard", shortcut: "⌥⌘C"
-                ) { coordinator.copyName(result) },
-                PopoverMenuItem(
-                    title: "Copy Path", systemImage: "doc.on.clipboard", shortcut: "⌃⌘C"
-                ) { coordinator.copyPath(result) },
-                PopoverMenuItem(
-                    title: "Move to Trash", systemImage: "trash", startsSection: true,
-                    shortcut: "⌃X", isDestructive: true
-                ) { coordinator.trash(result) }
-            ])
+                    title: String(localized: "Quick Look"), systemImage: "eye", shortcut: "⌘Y",
+                    action: quickLook))
+        }
+        items += [
+            PopoverMenuItem(title: String(localized: "Share…"), systemImage: "square.and.arrow.up") {
+                coordinator.share(result)
+            },
+            PopoverMenuItem(
+                title: String(localized: "Copy File"), systemImage: "doc.on.clipboard", startsSection: true,
+                shortcut: "⇧⌘C"
+            ) { coordinator.copyFile(result) },
+            PopoverMenuItem(
+                title: target.map { String(localized: "Paste File to \($0.name)") }
+                    ?? String(localized: "Paste File"),
+                icon: .paste(target, fallback: "doc.on.clipboard"), shortcut: "⇧⌘V"
+            ) { coordinator.pasteFile(result) },
+            PopoverMenuItem(
+                title: String(localized: "Copy Name"), systemImage: "doc.on.clipboard", shortcut: "⌥⌘C"
+            ) { coordinator.copyName(result) },
+            PopoverMenuItem(
+                title: String(localized: "Copy Path"), systemImage: "doc.on.clipboard", shortcut: "⌃⌘C"
+            ) { coordinator.copyPath(result) },
+            PopoverMenuItem(
+                title: String(localized: "Move to Trash"), systemImage: "trash", startsSection: true,
+                shortcut: "⌃X", isDestructive: true
+            ) { coordinator.trash(result) }
+        ]
+        return PopoverMenuContent(header: result.name, items: items)
+    }
+
+    /// No ⌃⇧X: there is no "all" to trash, only the one row.
+    static func perform(_ shortcut: PaletteShortcut, result: FileSearchResult, core: AppCore) -> Bool {
+        let coordinator = core.fileSearchCoordinator
+        switch shortcut {
+        case .copyFile: coordinator.copyFile(result)
+        case .copyName: coordinator.copyName(result)
+        case .copyPath: coordinator.copyPath(result)
+        case .pasteFile: coordinator.pasteFile(result)
+        // Trashing is undoable, so it asks nothing first, as the clipboard's delete does.
+        case .delete: coordinator.trash(result)
+        default: return false
+        }
+        return true
     }
 }

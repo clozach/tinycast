@@ -9,15 +9,13 @@ final class ExtensionStorage {
         var preferences: [String: StoredValue] = [:]
         /// A search-bar dropdown's `storeValue` pick — host UI state, so not `LocalStorage`.
         var accessoryValues: [String: String] = [:]
-
         enum CodingKeys: String, CodingKey {
             case localStorage, caches, preferences, accessoryValues
         }
 
         init() {}
 
-        /// Each section decodes on its own: one absent key must not take an extension's whole
-        /// store — API keys included — down with it, since a failed decode resets the file.
+        /// Missing sections retain their defaults; unreadable documents are preserved on disk.
         init(from decoder: Decoder) throws {
             let store = try decoder.container(keyedBy: CodingKeys.self)
             localStorage =
@@ -73,13 +71,17 @@ final class ExtensionStorage {
     }
 
     private let directory: URL
+    private let oauth: ExtensionOAuthKeychain
     private var stores: [String: Store] = [:]
+    /// Preserve unexpected plaintext credentials or unreadable documents until explicitly repaired.
+    private var protectedFiles: [String: StorageError] = [:]
     /// Writes are coalesced, so a busy `Cache` doesn't hit the disk per key.
     private var dirty: Set<String> = []
     private var flushTask: Task<Void, Never>?
 
-    init(directory: URL) {
+    init(directory: URL, oauth: ExtensionOAuthKeychain = ExtensionOAuthKeychain()) {
         self.directory = directory
+        self.oauth = oauth
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
@@ -138,6 +140,23 @@ final class ExtensionStorage {
         mutate(name) { $0.caches[namespace] = [:] }
     }
 
+    // MARK: - OAuth tokens
+
+    func oauthTokens(extension name: String, provider: String) throws -> String? {
+        try requireProtectedOAuthStorage(for: name)
+        return try oauth.getTokens(extensionName: name, providerId: provider)
+    }
+
+    /// `nil` signs the provider out.
+    func setOAuthTokens(extension name: String, provider: String, tokens: String?) throws {
+        try requireProtectedOAuthStorage(for: name)
+        if let tokens {
+            try oauth.setTokens(tokens, extensionName: name, providerId: provider)
+        } else {
+            try oauth.removeTokens(extensionName: name, providerId: provider)
+        }
+    }
+
     // MARK: - Preferences
 
     func preference(extension name: String, key: String) -> ExtensionPreferenceValue? {
@@ -177,24 +196,49 @@ final class ExtensionStorage {
         }
     }
 
-    func removeAll(extension name: String) {
+    func removeAll(extension name: String) throws {
+        try oauth.removeAllTokens(extensionName: name)
+        let file = fileURL(for: name)
+        if FileManager.default.fileExists(atPath: file.path) {
+            try FileManager.default.removeItem(at: file)
+        }
         stores.removeValue(forKey: name)
-        try? FileManager.default.removeItem(at: fileURL(for: name))
+        protectedFiles.removeValue(forKey: name)
+        dirty.remove(name)
     }
 
     // MARK: - Persistence
 
     private func store(for name: String) -> Store {
         if let existing = stores[name] { return existing }
-        let loaded =
-            (try? Data(contentsOf: fileURL(for: name)))
-            .flatMap { try? JSONDecoder().decode(Store.self, from: $0) } ?? Store()
+        let file = fileURL(for: name)
+        var loaded = Store()
+        if FileManager.default.fileExists(atPath: file.path) {
+            do {
+                let data = try Data(contentsOf: file)
+                let document = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                if let tokens = document?["oauthTokens"], !(tokens is NSNull) {
+                    if (tokens as? [String: Any])?.isEmpty != true {
+                        protectedFiles[name] = .plaintextOAuth(file)
+                    }
+                }
+                loaded = try JSONDecoder().decode(Store.self, from: data)
+            } catch {
+                protectedFiles[name] = protectedFiles[name] ?? .unreadable(file)
+            }
+        }
         stores[name] = loaded
         return loaded
     }
 
+    private func requireProtectedOAuthStorage(for name: String) throws {
+        _ = store(for: name)
+        if let error = protectedFiles[name] { throw error }
+    }
+
     private func mutate(_ name: String, _ body: (inout Store) -> Void) {
         var current = store(for: name)
+        guard protectedFiles[name] == nil else { return }
         body(&current)
         stores[name] = current
         dirty.insert(name)
@@ -215,12 +259,31 @@ final class ExtensionStorage {
         let pending = dirty
         dirty.removeAll()
         for name in pending {
-            guard let store = stores[name], let data = try? JSONEncoder().encode(store) else { continue }
+            guard protectedFiles[name] == nil, let store = stores[name],
+                let data = try? JSONEncoder().encode(store)
+            else { continue }
             try? data.write(to: fileURL(for: name), options: .atomic)
         }
     }
 
     private func fileURL(for name: String) -> URL {
         directory.appendingPathComponent("\(ExtensionCatalog.safeName(name)).json")
+    }
+
+    enum StorageError: LocalizedError {
+        case plaintextOAuth(URL)
+        case unreadable(URL)
+
+        var errorDescription: String? {
+            switch self {
+            case .plaintextOAuth(let file):
+                return "Older OAuth credentials were found in \(file.path). Tinycast left this file "
+                    + "unchanged. Migrate its oauthTokens section to Keychain, or remove that section "
+                    + "then restart Tinycast and reconnect, before using this extension."
+            case .unreadable(let file):
+                return "Tinycast could not read \(file.path) and left it unchanged. "
+                    + "Restore or repair that file, then restart Tinycast before using this extension."
+            }
+        }
     }
 }

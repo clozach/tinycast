@@ -16,6 +16,7 @@ final class DialogPanel: NSPanel {
     var handlesArrowKeys = false
     /// Teach's Target is multiline; its Return edits, while Command-Return saves.
     var allowsMultilineEditing = false
+    var acceptsLineBreaks = false
 
     init(content: NSView, cornerRadius: CGFloat) {
         super.init(
@@ -33,8 +34,7 @@ final class DialogPanel: NSPanel {
         isOpaque = false
         backgroundColor = .clear
         hasShadow = true
-        // Suppresses AppKit's own window animation; `fadeIn`/`fadeOut` replace it.
-        animationBehavior = .none
+        animationBehavior = .documentWindow
         isReleasedWhenClosed = false
         content.wantsLayer = true
         content.layer?.cornerRadius = cornerRadius
@@ -53,6 +53,8 @@ final class DialogPanel: NSPanel {
         switch Int(event.keyCode) {
         case kVK_Escape:
             onKey(.cancel)
+        case kVK_Return where returnBelongsToText(event):
+            super.sendEvent(event)
         case kVK_Return, kVK_ANSI_KeypadEnter:
             if allowsMultilineEditing, let editor = firstResponder as? NSTextView,
                 !editor.isFieldEditor, !event.modifierFlags.contains(.command)
@@ -100,18 +102,25 @@ final class DialogPanel: NSPanel {
         return true
     }
 
+    /// An input method commits its marked text on ↵, so that press is never a confirm.
+    private func returnBelongsToText(_ event: NSEvent) -> Bool {
+        if (firstResponder as? NSTextView)?.hasMarkedText() == true { return true }
+        return acceptsLineBreaks && !event.modifierFlags.contains(.command)
+    }
+
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 
     func focusFirstTextField() {
-        // AppKit picks a responder when the panel turns key; SwiftUI must be laid out afterward.
+        // SwiftUI builds its text fields on first layout, which may not have run by turning key.
         contentView?.layoutSubtreeIfNeeded()
         guard let field = contentView.flatMap(Self.firstTextField(in:)) else { return }
         makeFirstResponder(field)
     }
 
-    private static func firstTextField(in view: NSView) -> NSTextField? {
+    private static func firstTextField(in view: NSView) -> NSView? {
         if let field = view as? NSTextField, field.isEditable, field.isEnabled { return field }
+        if let text = view as? NSTextView, text.isEditable { return text }
         return view.subviews.lazy.compactMap(firstTextField(in:)).first
     }
 }

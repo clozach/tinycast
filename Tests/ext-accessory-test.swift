@@ -28,7 +28,6 @@ struct ExtensionPreferenceSchema {
     }
 }
 
-/// The search-bar dropdown's pure rules: how its choices are read, and which one it starts on.
 @main
 @MainActor
 struct ExtensionSearchAccessoryTests {
@@ -158,7 +157,8 @@ struct ExtensionSearchAccessoryTests {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("tinycast-ext-accessory-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: directory) }
-        let storage = ExtensionStorage(directory: directory)
+        let storage = ExtensionStorage(
+            directory: directory, oauth: ExtensionOAuthKeychain(store: ExtensionTestTokenStore()))
         storage.setLocalStorage(extension: "sample", key: "filter", value: .string("extension-data"))
         storage.setAccessoryValue(extension: "sample", key: "filter", value: "selected")
         storage.setPreference(
@@ -171,7 +171,8 @@ struct ExtensionSearchAccessoryTests {
             storage.accessoryValue(extension: "sample", key: "filter") == "selected")
         storage.flush()
 
-        let reloaded = ExtensionStorage(directory: directory)
+        let reloaded = ExtensionStorage(
+            directory: directory, oauth: ExtensionOAuthKeychain(store: ExtensionTestTokenStore()))
         check(
             "a pick survives a reload",
             reloaded.accessoryValue(extension: "sample", key: "filter") == "selected")
@@ -193,7 +194,8 @@ struct ExtensionSearchAccessoryTests {
                 try? data.write(to: file)
             }
         }
-        let older = ExtensionStorage(directory: directory)
+        let older = ExtensionStorage(
+            directory: directory, oauth: ExtensionOAuthKeychain(store: ExtensionTestTokenStore()))
         check(
             "a store with no accessory section keeps its localStorage",
             older.localStorageValue(extension: "older", key: "kept") == .string("value"))

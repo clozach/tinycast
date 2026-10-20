@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 
 @MainActor
 @Observable
@@ -11,11 +11,14 @@ final class WindowSwitchSession {
     private var query = ""
     /// Live AX handles, so they are never observed and never outlive the show.
     @ObservationIgnored private var elements: [Int: WindowSwitchSweep.Element] = [:]
+    /// Held only while rows are shown, so an app that quits takes its rows with it.
+    @ObservationIgnored private var terminationToken: NotificationCenter.ObservationToken?
 
     func present(_ snapshot: WindowSwitchSweep.Snapshot, scope: WindowSwitchScope = .all) {
         self.scope = scope
         self.snapshot = WindowSwitchOrder.sorted(snapshot.entries)
         elements = snapshot.elements
+        observeTerminations()
         applyQuery()
     }
 
@@ -42,6 +45,10 @@ final class WindowSwitchSession {
 
     func reset() {
         scope = .all
+        if let terminationToken {
+            NSWorkspace.shared.notificationCenter.removeObserver(terminationToken)
+        }
+        terminationToken = nil
         snapshot = []
         filtered = []
         elements = [:]
@@ -59,6 +66,29 @@ final class WindowSwitchSession {
         scope = next
         applyQuery()
         return true
+    }
+
+    func markMinimized(_ handle: Int) {
+        guard let index = snapshot.firstIndex(where: { $0.handle == handle }) else { return }
+        var entries = snapshot
+        entries[index].isMinimized = true
+        snapshot = WindowSwitchOrder.sorted(entries)
+        applyQuery()
+    }
+
+    private func observeTerminations() {
+        guard terminationToken == nil else { return }
+        terminationToken = NSWorkspace.shared.notificationCenter.addObserver(
+            of: NSWorkspace.shared, for: NSWorkspace.DidTerminateApplicationMessage.self
+        ) { [weak self] in self?.removeWindows(of: $0.application.processIdentifier) }
+    }
+
+    private func removeWindows(of pid: pid_t) {
+        let gone = Set(elements.compactMap { $0.value.app.processIdentifier == pid ? $0.key : nil })
+        guard !gone.isEmpty else { return }
+        for handle in gone { elements[handle] = nil }
+        snapshot.removeAll { gone.contains($0.handle) }
+        applyQuery()
     }
 
     private func applyQuery() {

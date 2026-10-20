@@ -16,7 +16,7 @@ struct MeetingDetailsScreen: PaletteScreen {
     }
 
     var primaryActionTitle: String {
-        meeting?.link == nil ? "Open in Calendar" : "Join Meeting"
+        meeting?.link == nil ? String(localized: "Open in Calendar") : String(localized: "Join Meeting")
     }
 
     func actions(at selection: Int) -> PopoverMenuContent? {
@@ -40,7 +40,7 @@ struct MeetingDetailsScreen: PaletteScreen {
 
     func body(selection: Int, scroll: ScrollIntent) -> AnyView {
         guard let details = store.details, let meeting = store.event(id: details.meetingID) else {
-            return AnyView(EmptyResults(text: "This meeting is no longer available"))
+            return AnyView(EmptyResults(text: String(localized: "This meeting is no longer available")))
         }
         return AnyView(MeetingDetailsView(meeting: meeting, details: details))
     }

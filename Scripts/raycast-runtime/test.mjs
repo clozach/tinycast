@@ -203,6 +203,9 @@ function syncHostCall(api, method, args) {
       }));
     case "fs.mkdir":
       return fs.mkdirSync(args[0], { recursive: args[1] }) ?? null;
+    case "fs.utimes":
+      fs.utimesSync(args[0], args[1], args[2]);
+      return null;
     case "fs.realpath":
       return fs.realpathSync(args[0]);
     case "fs.mkdtemp":
@@ -288,7 +291,6 @@ function syncHostCall(api, method, args) {
   }
 }
 
-const oauthTokens = new Map();
 const runningChildren = new Map();
 const openSockets = new Map();
 let nextSocketId = 1;
@@ -358,17 +360,6 @@ async function stubHostCall(api, method, args) {
       return null;
     }
     case "websocket.ping":
-      return null;
-    // Positional arguments throughout, matching `src/api/oauth.js`.
-    case "oauth.authorize":
-      return { authorizationCode: "auth-code-12345", state: args[1] ?? "" };
-    case "oauth.getTokens":
-      return oauthTokens.get(args[0]) ?? null;
-    case "oauth.setTokens":
-      oauthTokens.set(args[0], args[1]);
-      return null;
-    case "oauth.removeTokens":
-      oauthTokens.delete(args[0]);
       return null;
     default:
       if (["window", "feedback", "cache", "storage", "clipboard", "system"].includes(api)) return null;
@@ -462,11 +453,12 @@ function summarize(value) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const [dir, command] = process.argv.slice(2);
-  if (dir) {
-    await runExtension(dir, command);
-  } else {
-    await runFixtures();
-  }
+  // fixtures.mjs imports this harness. Finish evaluating this module before waiting on that import.
+  const run = dir ? runExtension(dir, command) : runFixtures();
+  run.catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
 }
 
 /// Mirrors the Swift-side resolution: a manifest default can be platform-keyed
@@ -510,7 +502,7 @@ async function runExtension(dir, commandName) {
       },
     }),
   );
-  harness.start("s1", readFileSync(file, "utf8"), file, dir, target.mode === "view" ? "view" : "no-view", {});
+  harness.start("s1", readFileSync(file, "utf8"), file, dir, target.mode, {});
 
   await new Promise((resolve) => setTimeout(resolve, Number(process.env.EXT_TEST_SETTLE_MS ?? 1500)));
   if (harness.state.failures.length) {

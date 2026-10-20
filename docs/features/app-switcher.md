@@ -49,7 +49,8 @@ is available independently of Settings → Navigation, which gates the standalon
 The same list opens from ordinary launcher search: summon once, type `saf` to select running
 Safari, then press Right at the end of `saf`. Its visible windows appear, with the same held-Option
 expansion, typing filter and Return restoration. Left at the start goes back to `saf` with Safari
-selected. A stopped app has no open windows and is not launched by Right. A running app's Actions
+selected. A stopped app has no open windows and is not launched by Right. With several installed copies of
+one app, Right reads the process running the selected bundle path; a different copy cannot substitute. A running app's Actions
 menu also offers **Show Windows**.
 
 ## Selection visibility

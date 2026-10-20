@@ -51,8 +51,8 @@ private struct WindowSwitchRow: View {
     }
 
     private var trailing: String {
-        if entry.isMinimized { return "\(entry.appName) · Minimized" }
-        return entry.isAppHidden ? "\(entry.appName) · Hidden" : entry.appName
+        if entry.isMinimized { return String(localized: "\(entry.appName) · Minimized") }
+        return entry.isAppHidden ? String(localized: "\(entry.appName) · Hidden") : entry.appName
     }
 
     var body: some View {

@@ -87,6 +87,11 @@ import Carbon.HIToolbox
         core.windowSwitchCoordinator.show()
         expect(core.windowSwitch.scope == .all, "global window shortcut leaves the scoped list")
         let globalCount = core.windowSwitch.filtered.count
+        core.palette.selection = 0
+        core.windowSwitchCoordinator.show(backwards: true)
+        expect(core.palette.selection == globalCount - 1, "the upstream backwards command wraps the global list")
+        core.windowSwitchCoordinator.show()
+        expect(core.palette.selection == 0, "forward switching wraps back after a backwards step")
         _ = core.windowSwitchCoordinator.handle(flags([]))
         expect(core.windowSwitch.filtered.count == globalCount, "global window list retains minimized windows")
         core.palette.prepare(mode: .launcher)
@@ -112,6 +117,16 @@ import Carbon.HIToolbox
             name: "Command")), "a command row cannot masquerade as an app")
         expect(!core.windowSwitchCoordinator.showWindows(of: AppEntry(kind: .application, bundleID: "missing.fixture",
             name: "Not running")), "browsing does not launch a stopped app")
+        core.windowSwitchCoordinator.showWindows(of: AppSwitchEntry(id: 42, name: "Editor", bundlePath: nil),
+            includingHidden: false)
+        if let entry = core.windowSwitch.filtered.first {
+            core.windowSwitchCoordinator.minimize(entry)
+            expect(!core.windowSwitch.filtered.contains { $0.handle == entry.handle },
+                "minimizing a scoped visible window respects its visibility filter")
+            _ = core.windowSwitchCoordinator.handle(flags(.option))
+            expect(core.windowSwitch.filtered.contains { $0.handle == entry.handle && $0.isMinimized },
+                "Option reveals the window minimized through upstream's new action")
+        }
         Permissions.allowed = false
         core.palette.mode = .switchApps
         let previousScope = core.windowSwitch.scope
@@ -123,7 +138,7 @@ import Carbon.HIToolbox
     }
 }
 
-enum PaletteMode { case launcher, switchApps, switchWindows }
+enum PaletteMode { case launcher, switchApps, switchWindows; var isNativeEditor: Bool { false } }
 enum ClipboardFilter { case all }
 enum FileSearchFilter { case all }
 enum EmojiCategoryFilter { case all }
@@ -137,6 +152,7 @@ struct AppEntry {
     let kind: Kind
     let bundleID: String?
     let name: String
+    var url = URL(fileURLWithPath: "/fixture.app")
 }
 struct HotKeyBinding { let shortcut: KeyShortcut? }
 @MainActor final class HotKeys {
@@ -144,7 +160,7 @@ struct HotKeyBinding { let shortcut: KeyShortcut? }
 }
 @MainActor final class AppSettings { var navigationEnabled = true }
 @MainActor final class AppIndex {
-    enum Command { case switchWindows }
+    enum Command { case switchWindows, switchWindowsBackwards }
     func setCommandsVisible(_ commands: [Command], _ visible: Bool) {}
 }
 @MainActor final class SendToCoordinator { var isPresented = false }
@@ -154,9 +170,12 @@ struct HotKeyBinding { let shortcut: KeyShortcut? }
     static func openAccessibilitySettings() {}
 }
 @MainActor final class FixtureApp {
+    var processIdentifier: pid_t = 42
     var isTerminated = false
     var isHidden = true
     func unhide() { isHidden = false }
+    func hide() -> Bool { isHidden = true; return true }
+    @discardableResult func terminate() -> Bool { isTerminated = true; return true }
 }
 @MainActor enum WindowSwitchSweep {
     struct Element { let app: FixtureApp; let application: Int; let window: AXUIElement }
@@ -189,6 +208,9 @@ struct HotKeyBinding { let shortcut: KeyShortcut? }
         handles[CFHash(window)] = handle
         return window
     }
+    static func isFullScreen(_ window: AXUIElement) -> Bool { false }
+    static func minimize(_ window: AXUIElement) -> Bool { true }
+    static func setHidden(_ hidden: Bool, application: Int) {}
     static func unminimize(_ window: AXUIElement) -> Bool {
         unminimized.append(handles[CFHash(window)] ?? -1)
         return true

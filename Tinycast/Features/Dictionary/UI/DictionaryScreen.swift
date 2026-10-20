@@ -14,7 +14,7 @@ struct DictionaryScreen: PaletteScreen {
     /// The one entry, so the footer and ⌘K act on it exactly as on a selected row.
     var rows: [DictionaryEntry] { entry.map { [$0] } ?? [] }
 
-    var primaryActionTitle: String { "Copy Definition" }
+    var primaryActionTitle: String { String(localized: "Copy Definition") }
 
     func sendToPayload(at selection: Int) -> SendToPayload? {
         entry.map { .text($0.text) }
@@ -25,10 +25,14 @@ struct DictionaryScreen: PaletteScreen {
         return PopoverMenuContent(
             header: entry.term,
             items: [
-                PopoverMenuItem(title: "Copy Definition", systemImage: "doc.on.doc", shortcut: "↵") {
+                PopoverMenuItem(
+                    title: String(localized: "Copy Definition"), systemImage: "doc.on.doc", shortcut: "↵"
+                ) {
                     core.dictionaryCoordinator.copy(entry)
                 },
-                PopoverMenuItem(title: "Open in Dictionary", systemImage: "book", shortcut: "⌘↵") {
+                PopoverMenuItem(
+                    title: String(localized: "Open in Dictionary"), systemImage: "book", shortcut: "⌘↵"
+                ) {
                     core.dictionaryCoordinator.openInDictionary(entry)
                 }
             ])
@@ -46,9 +50,11 @@ struct DictionaryScreen: PaletteScreen {
     }
 
     func body(selection: Int, scroll: ScrollIntent) -> AnyView {
-        if term.isEmpty { return AnyView(EmptyResults(text: "Type a word to define")) }
+        if term.isEmpty { return AnyView(EmptyResults(text: String(localized: "Type a word to define"))) }
         if let entry { return AnyView(DictionaryEntryView(entry: entry)) }
-        if session.lookup?.term == term { return AnyView(EmptyResults(text: "No definition found")) }
+        if session.lookup?.term == term {
+            return AnyView(EmptyResults(text: String(localized: "No definition found")))
+        }
         return AnyView(Color.clear)
     }
 }

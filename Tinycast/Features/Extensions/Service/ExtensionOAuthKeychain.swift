@@ -1,123 +1,129 @@
 import Foundation
 import Security
 
-/// Injected so a harness can hold tokens without touching the real Keychain.
-protocol ExtensionOAuthTokenStore: Sendable {
-    func get(account: String) -> String?
-    func set(_ value: String, account: String) -> Bool
-    func remove(account: String) -> Bool
-    func removeAll(prefix: String, exactMatch: String)
+/// Injected in tests so verification never reads or writes the user's Keychain.
+@MainActor
+protocol ExtensionOAuthTokenStore {
+    func get(account: String) throws -> String?
+    func set(_ value: String, account: String) throws
+    func remove(account: String) throws
+    func accounts() throws -> [String]
 }
 
+struct ExtensionOAuthKeychainError: LocalizedError {
+    let operation: String
+    let status: OSStatus
+
+    var errorDescription: String? {
+        "Could not \(operation) extension sign-in credentials in Keychain (status \(status)). "
+            + "Unlock your Keychain or allow Tinycast access, then try again."
+    }
+}
+
+@MainActor
 struct KeychainOAuthTokenStore: ExtensionOAuthTokenStore {
-    private let serviceName = "com.tinycast.extensions.oauth"
+    // Preserve this fork's pre-upgrade service and account identities.
+    static let serviceName = "com.tinycast.extensions.oauth"
 
-    func get(account: String) -> String? {
-        let query: [String: Any] = [
+    private func query(account: String? = nil) -> [String: Any] {
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne
+            kSecAttrService as String: Self.serviceName,
         ]
-
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status == errSecSuccess, let data = item as? Data else {
-            return nil
-        }
-        return String(data: data, encoding: .utf8)
+        if let account { query[kSecAttrAccount as String] = account }
+        return query
     }
 
-    func set(_ value: String, account: String) -> Bool {
-        guard let data = value.data(using: .utf8) else { return false }
+    func get(account: String) throws -> String? {
+        var query = query(account: account)
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        if status == errSecItemNotFound { return nil }
+        guard status == errSecSuccess else {
+            throw ExtensionOAuthKeychainError(operation: "read", status: status)
+        }
+        guard let data = item as? Data, let value = String(data: data, encoding: .utf8) else {
+            throw ExtensionOAuthKeychainError(operation: "decode", status: errSecDecode)
+        }
+        return value
+    }
 
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
-            kSecAttrAccount as String: account
-        ]
-
+    func set(_ value: String, account: String) throws {
+        let query = query(account: account)
         let attributes: [String: Any] = [
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked
+            kSecValueData as String: Data(value.utf8),
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked,
         ]
-
-        let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+        var status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
         if status == errSecItemNotFound {
-            var newQuery = query
-            newQuery[kSecValueData as String] = data
-            newQuery[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlocked
-            return SecItemAdd(newQuery as CFDictionary, nil) == errSecSuccess
+            status = SecItemAdd(query.merging(attributes) { _, new in new } as CFDictionary, nil)
         }
-        return status == errSecSuccess
+        guard status == errSecSuccess else {
+            throw ExtensionOAuthKeychainError(operation: "save", status: status)
+        }
     }
 
-    func remove(account: String) -> Bool {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
-            kSecAttrAccount as String: account
-        ]
-        let status = SecItemDelete(query as CFDictionary)
-        return status == errSecSuccess || status == errSecItemNotFound
+    func remove(account: String) throws {
+        let status = SecItemDelete(query(account: account) as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw ExtensionOAuthKeychainError(operation: "remove", status: status)
+        }
     }
 
-    func removeAll(prefix: String, exactMatch: String) {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
-            kSecReturnAttributes as String: true,
-            kSecMatchLimit as String: kSecMatchLimitAll
-        ]
-
+    func accounts() throws -> [String] {
+        var query = query()
+        query[kSecReturnAttributes as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitAll
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status == errSecSuccess, let items = item as? [[String: Any]] else { return }
-
-        for attributes in items {
-            guard let account = attributes[kSecAttrAccount as String] as? String else { continue }
-            if account == exactMatch || account.hasPrefix(prefix) {
-                let deleteQuery: [String: Any] = [
-                    kSecClass as String: kSecClassGenericPassword,
-                    kSecAttrService as String: serviceName,
-                    kSecAttrAccount as String: account
-                ]
-                SecItemDelete(deleteQuery as CFDictionary)
+        if status == errSecItemNotFound { return [] }
+        guard status == errSecSuccess else {
+            throw ExtensionOAuthKeychainError(operation: "list", status: status)
+        }
+        guard let items = item as? [[String: Any]] else {
+            throw ExtensionOAuthKeychainError(operation: "decode", status: errSecDecode)
+        }
+        return try items.map { attributes in
+            guard let account = attributes[kSecAttrAccount as String] as? String else {
+                throw ExtensionOAuthKeychainError(operation: "decode", status: errSecDecode)
             }
+            return account
         }
     }
 }
 
-/// Secure storage for extension OAuth tokens, keyed by extension name and provider.
-enum ExtensionOAuthKeychain {
-    nonisolated(unsafe) static var store: ExtensionOAuthTokenStore = KeychainOAuthTokenStore()
+/// OAuth JSON is opaque here and never enters ExtensionStorage's on-disk document.
+@MainActor
+struct ExtensionOAuthKeychain {
+    private let store: any ExtensionOAuthTokenStore
+
+    init(store: any ExtensionOAuthTokenStore = KeychainOAuthTokenStore()) {
+        self.store = store
+    }
 
     static func accountKey(extensionName: String, providerId: String?) -> String {
-        if let providerId, !providerId.isEmpty {
-            return "\(extensionName):\(providerId)"
+        guard let providerId, !providerId.isEmpty else { return extensionName }
+        return "\(extensionName):\(providerId)"
+    }
+
+    func getTokens(extensionName: String, providerId: String?) throws -> String? {
+        try store.get(account: Self.accountKey(extensionName: extensionName, providerId: providerId))
+    }
+
+    func setTokens(_ value: String, extensionName: String, providerId: String?) throws {
+        try store.set(value, account: Self.accountKey(extensionName: extensionName, providerId: providerId))
+    }
+
+    func removeTokens(extensionName: String, providerId: String?) throws {
+        try store.remove(account: Self.accountKey(extensionName: extensionName, providerId: providerId))
+    }
+
+    func removeAllTokens(extensionName: String) throws {
+        for account in try store.accounts()
+        where account == extensionName || account.hasPrefix("\(extensionName):") {
+            try store.remove(account: account)
         }
-        return extensionName
-    }
-
-    static func getTokens(extensionName: String, providerId: String?) -> String? {
-        let account = accountKey(extensionName: extensionName, providerId: providerId)
-        return store.get(account: account)
-    }
-
-    @discardableResult
-    static func setTokens(_ jsonString: String, extensionName: String, providerId: String?) -> Bool {
-        let account = accountKey(extensionName: extensionName, providerId: providerId)
-        return store.set(jsonString, account: account)
-    }
-
-    @discardableResult
-    static func removeTokens(extensionName: String, providerId: String?) -> Bool {
-        let account = accountKey(extensionName: extensionName, providerId: providerId)
-        return store.remove(account: account)
-    }
-
-    static func removeAllTokens(extensionName: String) {
-        store.removeAll(prefix: "\(extensionName):", exactMatch: extensionName)
     }
 }

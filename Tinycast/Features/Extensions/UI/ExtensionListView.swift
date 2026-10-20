@@ -39,14 +39,14 @@ struct ExtensionListView: View {
     @ViewBuilder
     private var emptyState: some View {
         if screen.isLoading {
-            EmptyResults(text: "Loading…")
+            EmptyResults(text: String(localized: "Loading…"))
         } else if let empty = screen.emptyView {
             VStack(spacing: metrics.spacing.md) {
                 ExtensionIconView(
                     resolved: ExtensionImage.resolve(
                         empty.props["icon"], assetsPath: assetsPath, isDark: isDark),
                     size: 42)
-                Text(empty.string("title") ?? "Nothing here")
+                Text(empty.string("title") ?? String(localized: "Nothing here"))
                     .font(metrics.typography.rowTitle)
                 if let description = empty.string("description") {
                     Text(description)
@@ -58,7 +58,7 @@ struct ExtensionListView: View {
             .padding(.horizontal, metrics.spacing.xl)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            EmptyResults(text: "No results")
+            EmptyResults(text: String(localized: "No results"))
         }
     }
 
@@ -183,7 +183,6 @@ struct ExtensionListView: View {
     }
 }
 
-/// One `List.Item`: icon, title, subtitle, then its accessories right-aligned.
 private struct ExtensionItemRow: View {
     @Environment(\.metrics) private var metrics
     @Environment(\.isDarkAppearance) private var isDark
@@ -209,7 +208,7 @@ private struct ExtensionItemRow: View {
             Text(node.string("title") ?? "")
                 .font(metrics.typography.rowTitle)
                 .lineLimit(1)
-                // A detail list is 290pt wide, and an accessory would otherwise win the squeeze.
+                // Outranks the Spacer, which would otherwise take half the title's room.
                 .layoutPriority(1)
             if !compact, let subtitle = node.string("subtitle"), !subtitle.isEmpty {
                 Text(subtitle)
@@ -220,7 +219,9 @@ private struct ExtensionItemRow: View {
             Spacer(minLength: metrics.spacing.sm)
             // Raycast draws the accessories it is given, and a quota row's signal is all in them.
             ExtensionAccessoriesView(
-                accessories: node.array("accessories"), assetsPath: assetsPath)
+                accessories: node.array("accessories"), assetsPath: assetsPath
+            )
+            .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.horizontal, metrics.spacing.md)
         .padding(.vertical, metrics.spacing.sm)
@@ -315,7 +316,6 @@ struct ExtensionAccessoriesView: View {
     }
 }
 
-/// One `Grid.Item`: content sized to the tile the `Grid`'s props ask for, title underneath.
 private struct ExtensionGridCell: View {
     @Environment(\.metrics) private var metrics
     @Environment(\.isDarkAppearance) private var isDark
