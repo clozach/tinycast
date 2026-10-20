@@ -41,6 +41,7 @@ typealias MenuPanelClipPath =
     let rowCount: Int
     let preferredSelection: Int?
     let isSelectable: (Int) -> Bool
+    let focusDestination: (Int) -> PopoverMenuItem.FocusDestination
     let clipPath: MenuPanelClipPath
     let motion: MenuPanelMotion
     /// Built on demand: `moveMenu` resolves the open menu on every arrow key.
@@ -53,6 +54,7 @@ typealias MenuPanelClipPath =
         view: @escaping (MenuPanelCorner) -> AnyView,
         activate: @escaping (Int) -> Void,
         isSelectable: @escaping (Int) -> Bool = { _ in true },
+        focusDestination: @escaping (Int) -> PopoverMenuItem.FocusDestination = { _ in .search },
         clipPath: @escaping MenuPanelClipPath,
         motion: MenuPanelMotion
     ) {
@@ -61,6 +63,7 @@ typealias MenuPanelClipPath =
         self.view = view
         self.activate = activate
         self.isSelectable = isSelectable
+        self.focusDestination = focusDestination
         self.clipPath = clipPath
         self.motion = motion
     }
@@ -81,6 +84,7 @@ typealias MenuPanelClipPath =
             },
             activate: { popover.items[$0].action() },
             isSelectable: { popover.items[$0].isSelectable },
+            focusDestination: { popover.items[$0].focusDestination },
             clipPath: { bounds, metrics, corner in
                 PopoverMenu.SurfaceShape(
                     attachment: corner.popoverAttachment, radius: metrics.radius.menuPanel,

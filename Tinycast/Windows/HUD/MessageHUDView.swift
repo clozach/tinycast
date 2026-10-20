@@ -7,30 +7,55 @@ struct MessageHUDView: View {
         case progress
     }
 
+    enum Action {
+        case cancel(() -> Void)
+        case undo(() -> Void)
+
+        var title: String {
+            switch self {
+            case .cancel: "Cancel"
+            case .undo: "Undo"
+            }
+        }
+
+        var symbol: String {
+            switch self {
+            case .cancel: "xmark"
+            case .undo: "arrow.uturn.backward"
+            }
+        }
+
+        func perform() {
+            switch self {
+            case .cancel(let run), .undo(let run): run()
+            }
+        }
+    }
+
     private static let glowOpacity = 0.14
     private static let glowRadius: CGFloat = 150
     private static let rimOpacity = 0.25
 
     let message: String
     let accessory: Accessory
-    var onCancel: (() -> Void)? = nil
+    var action: Action?
     @State private var hovered = false
     @Environment(\.metrics) private var metrics
 
     var body: some View {
         Group {
-            if let onCancel {
-                Button(action: onCancel) {
+            if let action {
+                Button(action: action.perform) {
                     content
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Cancel \(message)")
+                .accessibilityLabel("\(action.title) \(message)")
             } else {
                 content
             }
         }
         .onHover { isHovered in
-            if onCancel != nil {
+            if action != nil {
                 withAnimation(.easeOut(duration: Theme.Duration.hover)) {
                     hovered = isHovered
                 }
@@ -52,6 +77,11 @@ struct MessageHUDView: View {
                 .font(metrics.typography.bar)
                 .foregroundStyle(Color.primary)
                 .lineLimit(1)
+            if case .undo = action {
+                Text("Undo")
+                    .font(metrics.typography.bar.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, metrics.spacing.xl)
         .padding(.vertical, metrics.spacing.lg)
@@ -91,8 +121,8 @@ struct MessageHUDView: View {
     /// One box for both marks, so swapping a spinner for its outcome cannot resize the pill.
     private var mark: some View {
         Group {
-            if hovered, onCancel != nil {
-                Image(systemName: "xmark")
+            if hovered, let action {
+                Image(systemName: action.symbol)
                     .font(metrics.typography.menuIcon.weight(.semibold))
                     .foregroundStyle(Theme.Colors.textSecondary)
                     .frame(width: metrics.size.menuIcon, height: metrics.size.menuIcon)

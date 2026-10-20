@@ -21,7 +21,11 @@ enum BackupApplier {
         if categories.contains(.configuration), let data = try? Data(contentsOf: bundle.settingsURL),
             let backup = try? SettingsBackup(json: data)
         {
-            summary.settings = backup.apply(to: core)
+            do {
+                summary.settings = try backup.apply(to: core)
+            } catch {
+                summary.problems.append("Couldn't import configuration: \(error.localizedDescription)")
+            }
         }
         if categories.contains(.clipboard) {
             summary.clipboard = await importClipboard(bundle, into: core.clipboardStore)

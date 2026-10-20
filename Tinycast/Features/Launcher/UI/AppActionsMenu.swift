@@ -21,6 +21,12 @@ enum AppActionsMenu {
         var items = leadingItems(app: app, searchQuery: searchQuery, core: core)
         // A query-driven row lives only for its query, so no preference could outlive it.
         let isPersistent = !CommandCatalog.isQueryDriven(app)
+        if TeachCoordinator.canTeach(app) {
+            items.append(PopoverMenuItem(
+                title: "Teach This Item", systemImage: "character.cursor.ibeam",
+                shortcut: core.teachCoordinator.shortcut, focusDestination: .newWindow
+            ) { core.teachCoordinator.request(entry: app) })
+        }
         if isPersistent {
             items.append(
                 PopoverMenuItem(

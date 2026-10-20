@@ -19,6 +19,11 @@ enum PopoverMenuIcon: Equatable {
 
 /// One menu row; both the render path and the key handlers address rows through these.
 struct PopoverMenuItem {
+    enum FocusDestination {
+        case search
+        case newWindow
+    }
+
     let title: String
     let icon: PopoverMenuIcon
     let isLoading: Bool
@@ -30,6 +35,7 @@ struct PopoverMenuItem {
     var detail: String?
     /// Destructive rows (delete) tint their icon + label red, matching the native menu convention.
     var isDestructive: Bool = false
+    let focusDestination: FocusDestination
     let action: () -> Void
 
     /// What the keyboard and pointer may land on; a loading or disabled row only states itself.
@@ -38,7 +44,8 @@ struct PopoverMenuItem {
     init(
         title: String, icon: PopoverMenuIcon, isLoading: Bool = false, isEnabled: Bool = true,
         sectionTitle: String? = nil, startsSection: Bool = false, shortcut: String? = nil,
-        detail: String? = nil, isDestructive: Bool = false, action: @escaping () -> Void
+        detail: String? = nil, isDestructive: Bool = false,
+        focusDestination: FocusDestination = .search, action: @escaping () -> Void
     ) {
         self.title = title
         self.icon = icon
@@ -49,18 +56,20 @@ struct PopoverMenuItem {
         self.shortcut = shortcut
         self.detail = detail
         self.isDestructive = isDestructive
+        self.focusDestination = focusDestination
         self.action = action
     }
 
     init(
         title: String, systemImage: String, isLoading: Bool = false, isEnabled: Bool = true,
         sectionTitle: String? = nil, startsSection: Bool = false, shortcut: String? = nil,
-        isDestructive: Bool = false, action: @escaping () -> Void
+        isDestructive: Bool = false, focusDestination: FocusDestination = .search,
+        action: @escaping () -> Void
     ) {
         self.init(
             title: title, icon: .symbol(systemImage), isLoading: isLoading, isEnabled: isEnabled,
             sectionTitle: sectionTitle, startsSection: startsSection, shortcut: shortcut,
-            isDestructive: isDestructive, action: action)
+            isDestructive: isDestructive, focusDestination: focusDestination, action: action)
     }
 }
 

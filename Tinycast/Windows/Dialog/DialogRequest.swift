@@ -39,6 +39,7 @@ enum DialogAccessory {
     case volume(VolumeState)
     case eventDraft(EventDraftState)
     case snippetArguments(SnippetArgumentsState)
+    case teach(TeachSession, refreshApplications: () -> Void)
 
     /// Whether ←/→/↑/↓ belong to the control rather than to whatever has focus inside it.
     var claimsArrowKeys: Bool {

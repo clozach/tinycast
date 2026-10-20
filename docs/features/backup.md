@@ -5,6 +5,10 @@ importing a Raycast export. The feature lives in `Features/Backup/`.
 
 A backup carries five independently selectable categories, ticked on export and again on import:
 **Settings & Shortcuts**, **Clipboard History**, **Snippets**, **Notes** and **Launcher Learning**.
+In this fork, Settings & Shortcuts also carries the literal target library created with
+[Teach Tinycast](teach.md), including its Open/Paste delivery choice and browser bundle ID.
+Configuration restore commits this library before touching preferences or aliases; invalid targets
+or a failed write abort the configuration category and are reported in the import summary.
 
 ## Invariants
 
@@ -21,11 +25,12 @@ A backup carries five independently selectable categories, ticked on export and 
   config must not be able to grant something the user never granted. `FallbackStore` is the second
   case: its order and checkboxes live on their own `UserDefaults` keys precisely so an import cannot
   arm **Run Shell Command** in someone's launcher. This change adds *content*, never a capability.
-- **No absolute path may enter a `.tinycast`.** A clip's `imagePath` names a file on the Mac that wrote
+- **Generated storage paths do not enter a `.tinycast`.** A clip's `imagePath` names a file on the Mac that wrote
   it, so `BackupClipboardItem` carries a bundle-relative `imageName` instead. `backup-archive-test`
-  asserts the produced file contains neither `/Users` nor `/Library` — the analogue of
+  asserts its fixture contains neither `/Users` nor `/Library` — the analogue of
   `settings-backup-test`'s `snippetsEnabled` check, and for the same reason: this file gets sent to
-  people.
+  people. User-authored quicklinks and taught literal targets can themselves name local paths;
+  they are content, retained verbatim and potentially specific to the source Mac.
 - **The file carries a format version and a reader accepts only its own.** That is a guard, not a
   migration: the comparison is `==`, so an older and a newer file fail identically and by the same
   statement. Writing it any other way is the first line of a migration, and the project has none.

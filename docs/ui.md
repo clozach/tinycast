@@ -550,6 +550,10 @@ sole owner rule) and is the only presenter, so every confirmation in the app loo
   outcome lands at a glance before the sentence is read. Auto-dismisses after
   `Duration.messageHUD` (2.4s) — longer than the volume box, since a sentence needs reading time and a
   level only needs a glance — and a repeat call replaces rather than stacks.
+- **Teach save/delete receipts reuse this pill with Undo.** The label remains visible, and the
+  leading glyph swaps to the undo arrow on hover without changing its box. The receipt fades after
+  eight seconds; the same latest inverse stays available in Commands settings for the app session.
+  There is no Done screen to dismiss. `MessageHUDView.Action` separates Undo from progress Cancel.
 - **The same pill reports work still running**, through `showProgress(message:onCancel:)`: a Quick Action set to
   replace has no panel to watch the answer arrive in, so the pill says `Fixing Grammar…` in its place
   and the result message replaces it when the model is done. Its leading mark is a spinner rather

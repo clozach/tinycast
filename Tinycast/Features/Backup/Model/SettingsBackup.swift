@@ -7,6 +7,7 @@ struct SettingsBackup: Codable {
     var hotkeys: HotkeyBackup?
     var customCommands: [CustomCommand]?
     var quicklinks: [Quicklink]?
+    var taughtTargets: [TaughtTarget]?
     var windowLayouts: [WindowLayout]?
     var windowRooms: [Room]?
     var customWindowSizes: [CustomWindowSize]?
@@ -241,6 +242,7 @@ extension SettingsBackup {
 
         backup.customCommands = core.customCommands.commands
         backup.quicklinks = core.quicklinks.quicklinks
+        backup.taughtTargets = core.taughtTargets.targets
         backup.windowLayouts = core.windowLayouts.layouts
         backup.windowRooms = core.rooms.rooms
         backup.customWindowSizes = core.customWindowSizes.sizes
@@ -253,8 +255,10 @@ extension SettingsBackup {
     }
 
     @discardableResult
-    func apply(to core: AppCore) -> ApplySummary {
+    func apply(to core: AppCore) throws -> ApplySummary {
         var summary = ApplySummary()
+        // Target persistence must succeed before its aliases or any other configuration change.
+        if let taughtTargets { try core.teachCoordinator.replaceTargets(taughtTargets) }
         if let s = settings { summary.settingsFields = applySettings(s, to: core) }
         if let customCommands {
             summary.customCommands = core.customCommandCoordinator.replaceCustomCommands(customCommands)

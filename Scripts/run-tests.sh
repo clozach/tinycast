@@ -154,6 +154,17 @@ run favorites-test         $L/FavoriteSlots.swift
 run apple-shortcut-test    Tinycast/Features/AppleShortcuts/Model/*.swift
 run send-to-panel-test     Tinycast/Platform/WindowLevel.swift \
                           Tinycast/Features/SendTo/UI/SendToPanel.swift
+run dialog-panel-test     Tinycast/Platform/WindowLevel.swift \
+                          Tinycast/Windows/Dialog/DialogPanel.swift
+run teach-test            $L/SearchRelevance.swift \
+                          Tinycast/Features/Quicklinks/Model/QuicklinkDestination.swift \
+                          Tinycast/Features/Teach/Model/*.swift \
+                          Tinycast/Features/Teach/Service/TeachStore.swift
+run page-title-test       $L/SearchRelevance.swift \
+                          Tinycast/Features/Quicklinks/Model/QuicklinkDestination.swift \
+                          Tinycast/Features/Teach/Model/*.swift \
+                          Tinycast/Features/Teach/Service/*.swift \
+                          Tinycast/Features/Teach/UI/TeachTitleLoader.swift
 run send-to-focus-test     Tinycast/Features/SendTo/UI/SendToController.swift
 run send-to-test           Tinycast/Features/SendTo/Model/*.swift \
                            Tinycast/Features/SendTo/Service/*.swift

@@ -133,6 +133,10 @@ final class LauncherCoordinator {
             return
         }
         // Before the palette hides: an unfilled quicklink stays up to ask first.
+        if app.kind == .taughtTarget {
+            core.teachCoordinator.activate(entryID: app.id)
+            return
+        }
         if app.kind == .quicklink {
             guard let id = Quicklink.id(fromEntryID: app.id) else { return }
             quicklinkCoordinator.openQuicklink(id: id, values: arguments)
@@ -155,7 +159,7 @@ final class LauncherCoordinator {
             guard let snippetID = StoredSnippet.id(fromEntryID: app.id) else { return }
             snippetCoordinator.expandSnippet(id: snippetID, target: previous)
         case .command, .quickAction, .customCommand, .systemAction, .windowCommand, .windowLayout,
-            .windowRoom, .quicklink, .appleShortcut, .extensionCommand, .meeting:
+            .windowRoom, .quicklink, .appleShortcut, .extensionCommand, .meeting, .taughtTarget:
             break  // handled above
         }
     }
@@ -163,6 +167,7 @@ final class LauncherCoordinator {
     /// The one funnel a built-in command runs through, from a palette row or its global shortcut.
     /// A shortcut fired over a root search hands what was typed to the search screen it opens.
     func runCommandFromHotKey(_ id: CommandID) {
+        if id == .teach { core.teachCoordinator.request(contextual: true); return }
         let typed = paletteCoordinator.isShowing(.launcher) ? core.palette.query : ""
         runCommand(id, carrying: typed)
         guard !typed.isEmpty, paletteCoordinator.isVisible, core.palette.mode.searchesTypedText
@@ -245,6 +250,8 @@ final class LauncherCoordinator {
             core.roomCoordinator.showRooms()
         case .createRoom:
             core.roomCoordinator.createRoom()
+        case .teach:
+            core.teachCoordinator.request()
         case .createQuicklink:
             dismissPalette()
             quicklinkCoordinator.editQuicklink(nil)

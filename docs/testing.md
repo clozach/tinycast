@@ -108,6 +108,9 @@ If a change touches anything in the right column, the harness on the left is man
 | `pasteboard-test` | `Clipboard/Service/ClipboardManager.swift` capture and `Paster.write` — what a Finder copy reads as, and what a file entry writes back |
 | `send-to-test` | Target discovery, frozen rich clipboard payloads, file/image handling, exact-app delivery, focus changes and cancellation |
 | `send-to-panel-test` | Native search selection, undo/redo, navigation and IME composition before delivery |
+| `dialog-panel-test` | Post-key initial field focus, multiline Target versus Trigger Return, Command-Return, IME and edit Undo/Redo |
+| `teach-test` | Literal target persistence, stable IDs, duplicate triggers, safe Open classification, private atomic writes and failure preservation |
+| `page-title-test` | Bounded inert HTML title parsing, HTTP redirects/MIME/byte limits, and manual-edit/Save/Undo races |
 | `send-to-focus-test` | Deferred chooser dismissal, returning to its source, and stale notification cancellation |
 | `emoji-test` | `Emoji/Model/EmojiCatalog.swift`, `EmojiGridGeometry.swift`, the generated data and keyword packs |
 | `emoji-search-test` | `Emoji/Service/EmojiIndex.swift`, `FrequentEmojiStore.swift`, `Scripts/gen-emoji.js`'s keyword format, multilingual search |

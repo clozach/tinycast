@@ -259,7 +259,8 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
     func windowDidBecomeKey(_ notification: Notification) {
         panel?.level = .palette
         DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
+            // A menu's queued refocus expires if its action has already opened another window.
+            guard let self, panel?.isKeyWindow == true, !core.isShowingDialog else { return }
             core.palette.focusToken = UUID()
             // A re-summon leaves first responder where it was, so neither of these gets an event.
             panel?.trackComposition()

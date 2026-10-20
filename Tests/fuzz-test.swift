@@ -235,6 +235,12 @@ struct FuzzTest {
             first("sp", [Item(name: "Spotify"), Item(name: "Arc", alias: "spaces")]) == "Arc")
         let appearance = Item(name: "Toggle System Appearance", alias: "toggle light / dark")
         check(
+            "an intentional exact alias wins without sharing the target's letters",
+            first("dark", [
+                Item(name: "Dark", frecency: 900),
+                Item(name: "Toggle System Appearance", alias: "DARK")
+            ]) == "Toggle System Appearance")
+        check(
             "a later word of an alias finds its entry",
             rank("dark", [Item(name: "Safari"), appearance]) == ["Toggle System Appearance"])
         check(

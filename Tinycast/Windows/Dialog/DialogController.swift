@@ -8,6 +8,7 @@ final class DialogController: NSObject, NSWindowDelegate {
     private let onPresentationChanged: (Bool) -> Void
     private var panel: DialogPanel?
     private var continuation: CheckedContinuation<Int, Never>?
+    private weak var parentWindow: NSWindow?
 
     init(settings: AppSettings, onPresentationChanged: @escaping (Bool) -> Void) {
         self.settings = settings
@@ -106,7 +107,15 @@ final class DialogController: NSObject, NSWindowDelegate {
         return state.values
     }
 
-    private func present(_ request: DialogRequest) async -> Int {
+    func teach(_ session: TeachSession, parent: NSWindow?, refreshApplications: @escaping () -> Void) async -> Int {
+        var actions = [DialogAction(title: "Save"), DialogAction(title: "Cancel", role: .cancel)]
+        if session.canDelete { actions.append(DialogAction(title: "Delete Target", role: .destructive)) }
+        let request = DialogRequest(title: "Teach Tinycast", symbol: nil, actions: actions,
+            defaultIndex: 0, cancelIndex: 1, accessory: .teach(session, refreshApplications: refreshApplications))
+        return await present(request, parent: parent)
+    }
+
+    private func present(_ request: DialogRequest, parent: NSWindow? = nil) async -> Int {
         // Keyed on the continuation, so a panel still fading can't swallow the next.
         guard continuation == nil else { return request.cancelIndex }
         return await withCheckedContinuation { continuation in
@@ -115,7 +124,7 @@ final class DialogController: NSObject, NSWindowDelegate {
             let width =
                 switch request.accessory {
                 case nil, .volume: metrics.size.dialogCompactWidth
-                case .eventDraft, .snippetArguments: metrics.size.dialogWidth
+                case .eventDraft, .snippetArguments, .teach: metrics.size.dialogWidth
                 }
             let content = hostingView(
                 DialogView(
@@ -127,6 +136,7 @@ final class DialogController: NSObject, NSWindowDelegate {
                 width: width, minHeight: 0)
             let panel = DialogPanel(content: content, cornerRadius: metrics.radius.panel)
             panel.handlesArrowKeys = request.accessory?.claimsArrowKeys ?? false
+            if case .teach = request.accessory { panel.allowsMultilineEditing = true }
             panel.delegate = self
             panel.onKey = { [weak self] key in
                 guard let self else { return }
@@ -143,6 +153,8 @@ final class DialogController: NSObject, NSWindowDelegate {
                 }
             }
             self.panel = panel
+            parentWindow = parent
+            parent?.addChildWindow(panel, ordered: .above)
             place(panel)
             show(panel)
         }
@@ -169,6 +181,7 @@ final class DialogController: NSObject, NSWindowDelegate {
 
     /// A refused primary action leaves the dialog up, as a greyed-out button would.
     private static func accepts(_ index: Int, for request: DialogRequest) -> Bool {
+        if index == request.defaultIndex, case .teach(let session, _) = request.accessory { return session.issue == nil }
         guard index == request.defaultIndex, case .eventDraft(let state) = request.accessory else {
             return true
         }
@@ -182,6 +195,10 @@ final class DialogController: NSObject, NSWindowDelegate {
         onPresentationChanged(false)
         let closing = panel
         panel = nil
+        let restoresParent = closing?.isKeyWindow == true
+        if let closing { parentWindow?.removeChildWindow(closing) }
+        if restoresParent, let parentWindow, parentWindow.isVisible { parentWindow.makeKey() }
+        parentWindow = nil
         closing?.delegate = nil
         closing?.onKey = nil
         continuation.resume(returning: index)
@@ -211,6 +228,12 @@ final class DialogController: NSObject, NSWindowDelegate {
     /// Optical centering: an exactly centred dialog reads low, as the palette would.
     private static let centerLift: CGFloat = 0.08
     // MARK: - NSWindowDelegate
+
+    /// Runs after AppKit's responder pick, which a SwiftUI appearance task cannot outlast.
+    func windowDidBecomeKey(_ notification: Notification) {
+        guard let panel, notification.object as? NSWindow === panel else { return }
+        panel.focusFirstTextField()
+    }
 
     /// Click-away resolves as a dismissal rather than leaving an orphaned dialog behind.
     func windowDidResignKey(_ notification: Notification) {

@@ -376,10 +376,11 @@ memos on the store's revision.
 A launcher row shows its entry's alias as a small chip after the name, so what a badge-bearing
 result will answer to is visible without opening anything.
 
-Editing lives in Settings only — an alias is one-time configuration like a shortcut, not a
-per-invocation action, so the ⌘K menu stays out of it. Visibility is the one exception, and only in
-one direction: an unwanted result is noticed while searching, so ⌘K can hide a row, but putting it
-back is still the pane's checkbox. Every pane built
+This fork also offers [Teach Tinycast](teach.md): ⌘K → Teach This Item or an assigned global shortcut
+opens a focused Trigger field for the selected ordinary launcher result. Outside that context the
+shortcut saves clipboard/manual text as an Open or Paste target. Teach rejects duplicate triggers
+and offers Undo. Existing Settings fields keep their behavior. Visibility still works in one
+direction from the menu: ⌘K can hide a row, while putting it back uses the pane's checkbox. Every pane built
 on `LauncherItemsSection` puts an `AliasField` on each row, dressed like the `ShortcutRecorder`
 beside it; edits store as typed and trim when the field loses focus, and a blank means none. That
 list filters by **membership only**, keeping the index's name order — re-ranking it per keystroke

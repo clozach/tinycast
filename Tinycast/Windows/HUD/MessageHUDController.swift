@@ -20,10 +20,17 @@ final class MessageHUDController {
             MessageHUDView(message: message, accessory: .tone(tone)).environment(\.metrics, metrics))
     }
 
+    func showUndo(message: String, undo: @escaping () -> Void) {
+        presenter.show(
+            MessageHUDView(message: message, accessory: .tone(.success), action: .undo(undo))
+                .environment(\.metrics, metrics),
+            interactive: true, duration: 8)
+    }
+
     /// Stays up until the work it reports ends and something replaces it, or `dismiss()` runs.
     func showProgress(message: String, onCancel: (() -> Void)? = nil) {
         presenter.show(
-            MessageHUDView(message: message, accessory: .progress, onCancel: onCancel)
+            MessageHUDView(message: message, accessory: .progress, action: onCancel.map { .cancel($0) })
                 .environment(\.metrics, metrics),
             dwells: false,
             interactive: onCancel != nil)

@@ -324,6 +324,12 @@ struct RootPaletteView: View {
                     }
                 )
                 .background(
+                    TeachSource(coordinator: core.teachCoordinator) {
+                        let entry = (screen as? LauncherScreen)?.entry(at: selection(in: screen))
+                        closeMenus()
+                        return entry
+                    })
+                .background(
                     SendToSource(coordinator: core.sendToCoordinator, prefersSelectedText: false) {
                         let payload = isCollapsed ? nil : screen.sendToPayload(at: selection(in: screen))
                         closeMenus()
@@ -381,6 +387,7 @@ struct RootPaletteView: View {
         emojiObservers(content)
             // Every show bumps focusToken so the search field refocuses.
             .onChange(of: vm.focusToken) {
+                guard !core.isShowingDialog, hostWindow?.isKeyWindow == true else { return }
                 searchFocused = !screen.hidesSearchField
             }
             .onChange(of: vm.followToken) { scroll = ScrollIntent(kind: .follow) }
@@ -1335,8 +1342,13 @@ struct RootPaletteView: View {
         guard content.isSelectable(index) else { return }
         // Before the action: one opening a window must find the palette key again, or nothing hides it.
         closeMenus()
-        // A mouse click on a row takes the caret with it; menus close back into the field.
-        if argumentFocused == nil { searchFocused = true }
+        // A new editor owns focus. A pending SwiftUI search-focus request would steal its caret.
+        if content.focusDestination(index) == .newWindow {
+            searchFocused = false
+            argumentFocused = nil
+        } else if argumentFocused == nil {
+            searchFocused = true
+        }
         content.activate(index)
     }
 

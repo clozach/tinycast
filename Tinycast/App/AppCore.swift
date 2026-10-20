@@ -10,6 +10,7 @@ final class AppCore {
     let appIndex: AppIndex
     let customCommands = CustomCommandStore()
     let quicklinks = QuicklinkStore()
+    let taughtTargets = TeachStore(fileURL: AppPaths.applicationSupport().appendingPathComponent("taught-targets.json"))
     let windowLayouts = WindowLayoutStore()
     let customWindowSizes = CustomWindowSizeStore()
     let rooms = RoomStore()
@@ -84,6 +85,7 @@ final class AppCore {
     /// Set when a layout editor should open with Settings; the pane consumes it.
     var pendingWindowLayoutEdit: WindowLayoutEditRequest?
 
+    @ObservationIgnored private(set) lazy var teachCoordinator = TeachCoordinator(core: self, windowController: windowController)
     @ObservationIgnored private(set) lazy var snippetCoordinator = SnippetCoordinator(
         store: snippetsStore, listener: snippetListener, injector: textInjector,
         clipboardStore: clipboardStore, appIndex: appIndex, settings: settings,
@@ -272,6 +274,7 @@ final class AppCore {
             applyAppearance()
             observeEffectiveAppearance()
             sendToCoordinator.start()
+            teachCoordinator.start()
             pinnedEmoji.onPersistenceFailure = { [weak self] in
                 self?.showMessage("Couldn't save Emoji & Symbols pins", tone: .danger)
             }
@@ -865,6 +868,10 @@ final class AppCore {
         messageHUD.show(message: message, tone: tone)
     }
 
+    func showUndo(_ message: String, undo: @escaping () -> Void) {
+        messageHUD.showUndo(message: message, undo: undo)
+    }
+
     /// The same pill with a spinner, for work the reader started and cannot otherwise see running.
     func showProgress(_ message: String, onCancel: (() -> Void)? = nil) {
         messageHUD.showProgress(message: message, onCancel: onCancel)
@@ -882,6 +889,11 @@ final class AppCore {
     /// The new-event prompt, for the same reason.
     func createEvent() async -> EventDraft? {
         await dialogs.createEvent()
+    }
+
+    /// The Teach editor shares the same dialog presentation owner.
+    func editTeach(_ session: TeachSession, parent: NSWindow?, refreshApplications: @escaping () -> Void) async -> Int {
+        await dialogs.teach(session, parent: parent, refreshApplications: refreshApplications)
     }
 
     /// The snippet argument prompt, for the same reason.

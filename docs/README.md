@@ -28,6 +28,7 @@ open with an `## Invariants` section; read it before changing anything in that a
 [quick actions](features/quick-actions.md) ·
 [clipboard](features/clipboard.md) ·
 [send to](features/send-to.md) ·
+[teach](features/teach.md) ·
 [calculator](features/calculator.md) ·
 [calendar](features/calendar.md) ·
 [camera](features/camera.md) ·

@@ -48,6 +48,7 @@ struct DialogView: View {
                 case .volume(let volume): VolumeSlider(state: volume)
                 case .eventDraft(let draft): EventDraftFields(state: draft)
                 case .snippetArguments(let arguments): SnippetArgumentFields(state: arguments)
+                case .teach(let session, let refresh): TeachFields(session: session, refreshApplications: refresh)
                 case nil: EmptyView()
                 }
             }
@@ -89,7 +90,13 @@ struct DialogView: View {
                 singleLine: singleLine,
                 onActivate: { onChoose(index) }
             )
+            .disabled(isDisabled(index))
         }
+    }
+
+    private func isDisabled(_ index: Int) -> Bool {
+        guard index == request.defaultIndex, case .teach(let session, _) = request.accessory else { return false }
+        return session.issue != nil
     }
 
     /// Cancel leads a horizontal pair; a vertical choice keeps the caller's semantic order.
@@ -104,7 +111,10 @@ struct DialogView: View {
 
     /// Only the two keys the panel handles are advertised, so a tooltip can't drift.
     private func keyCap(for index: Int) -> String? {
-        if index == request.defaultIndex { return "↵" }
+        if index == request.defaultIndex {
+            if case .teach = request.accessory { return "⌘↵" }
+            return "↵"
+        }
         if index == request.cancelIndex { return "⎋" }
         return nil
     }

@@ -18,8 +18,25 @@ each command's shortcut in **Settings → Extensions**.
 
 Each entry can have one alias. The field has a button to clear it.
 
-Aliases aren't in the <kbd>⌘</kbd><kbd>K</kbd> menu, because naming something is a one-time setting
-rather than something you do in the middle of a search.
+In this fork, **Teach This Item** in the <kbd>⌘</kbd><kbd>K</kbd> menu opens a focused Trigger field
+for the selected launcher item. Type `DARK` for Toggle System Appearance, then press Return.
+The item's action stays unchanged.
+
+For a global route, assign **Teach Tinycast** a shortcut in **Settings → Commands**. Over an ordinary
+launcher result, it teaches that item. Outside the launcher, it starts with clipboard text in Target:
+type a trigger → choose Open or Paste → save. Open offers Default first, then compatible installed
+apps. Running the Teach Tinycast command itself also starts a clipboard/manual target.
+
+Web URLs fill the optional Title field from the page automatically. You can edit it without
+changing the trigger. Results show the title, destination and trigger separately. Save never waits
+for title lookup; an in-flight result may finish the unchanged saved item afterward. Your own title
+edits, Undo or later target changes take precedence.
+
+Return saves from Trigger; Command-Return saves from Target, where Return inserts a newline.
+Escape or clicking outside cancels. Saved targets live in **Settings → Commands → Taught Targets**.
+Save and Delete offer Undo; **Undo Last Teaching** in Commands keeps the latest change reversible
+for the current app session. Teach rejects a duplicate trigger and shows which item already owns it.
+The older Settings alias fields keep their existing behavior.
 
 ## How an alias ranks
 
@@ -41,6 +58,7 @@ named.
 ## Backups and cleanup
 
 Aliases are included in [backups](/docs/reference/backup).
+Taught literal targets are included in Settings & Shortcuts too.
 
 An alias is removed along with the thing it names. If you uninstall the app, delete the quicklink or
 remove the extension, its alias is deleted too, so it can't linger and match nothing.

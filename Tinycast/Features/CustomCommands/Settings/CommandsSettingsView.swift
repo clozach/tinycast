@@ -18,6 +18,8 @@ struct CommandsSettingsView: View {
                 anchor: .commandsCommands,
                 searchPrompt: "Search commands…")
 
+            TaughtTargetsSection(coordinator: core.teachCoordinator, store: core.taughtTargets)
+
             FeatureSwitchSection(
                 anchor: .commandsCustomCommands,
                 enableTitle: "Enable custom commands",

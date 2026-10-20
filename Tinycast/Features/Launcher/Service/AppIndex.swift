@@ -13,6 +13,7 @@ struct AppEntry: Identifiable, Hashable, Sendable {
         case windowLayout
         case windowRoom
         case quicklink
+        case taughtTarget
         case appleShortcut
         case extensionCommand
         case meeting
@@ -69,6 +70,11 @@ struct AppEntry: Identifiable, Hashable, Sendable {
                     label: "Room", sectionTitle: "Rooms", openVerb: "Enter Room",
                     canHideFromSearch: true, canRevealInFinder: false, canDragOut: false,
                     isSymbolIcon: true, rankPriority: 3)
+            case .taughtTarget:
+                return KindDescriptor(
+                    label: "Taught Target", sectionTitle: "Taught Targets",
+                    openVerb: "Use Target", canHideFromSearch: false,
+                    canRevealInFinder: false, canDragOut: false, isSymbolIcon: true, rankPriority: 3)
             case .quicklink:
                 return KindDescriptor(
                     label: "Quicklink", sectionTitle: "Quicklinks",
@@ -198,7 +204,7 @@ struct AppEntry: Identifiable, Hashable, Sendable {
             return AppleShortcut.id(fromEntryID: id).map { .appleShortcut(id: $0) }
         case .snippet:
             return StoredSnippet.id(fromEntryID: id).map { .snippet(id: $0) }
-        case .extensionCommand, .meeting:
+        case .extensionCommand, .meeting, .taughtTarget:
             return nil
         }
     }
@@ -221,6 +227,7 @@ struct AppEntry: Identifiable, Hashable, Sendable {
 
     private var kindSymbol: String {
         switch kind {
+        case .taughtTarget: return "character.cursor.ibeam"
         case .quicklink: return Quicklink.sfSymbol
         case .snippet: return "text.quote"
         case .customCommand: return CustomCommand.sfSymbol
@@ -390,6 +397,7 @@ final class AppIndex {
     private var customWindowSizeEntries: [AppEntry] = []
     private var windowLayoutEntries: [AppEntry] = []
     private var windowRoomEntries: [AppEntry] = []
+    private var taughtEntries: [AppEntry] = []
     private var quicklinkEntries: [AppEntry] = []
     private var appleShortcutEntries: [AppEntry] = []
     private var customQuickActionEntries: [AppEntry] = []
@@ -466,6 +474,19 @@ final class AppIndex {
         let entries = actions.sorted(by: CustomQuickAction.precedes).map(AppEntry.init)
         guard entries != customQuickActionEntries else { return }
         customQuickActionEntries = entries
+        publishEntries()
+    }
+
+    /// Stable IDs keep aliases and ranking attached while a target's trigger is edited.
+    func setTaughtTargets(_ targets: [TaughtTarget]) {
+        let entries = targets.map { target in
+            AppEntry(id: target.entryID, name: target.displayTitle,
+                url: URL(string: "tinycast://taught/" + target.id.uuidString)!,
+                bundleID: nil, kind: .taughtTarget, settingsOwner: .commands,
+                subtitle: target.targetPreview)
+        }
+        guard entries != taughtEntries else { return }
+        taughtEntries = entries
         publishEntries()
     }
 
@@ -665,7 +686,7 @@ final class AppIndex {
         let updated =
             Self.named(meetingEntries) + discoveredEntries
             + Self.named(
-                extensionEntries + quicklinkEntries + appleShortcutEntries + snippetEntries
+                extensionEntries + quicklinkEntries + appleShortcutEntries + snippetEntries + taughtEntries
                     + Self.systemActionEntries + windowLayoutEntries + windowRoomEntries
                     + windowCommandEntries
                     + customWindowSizeEntries + customCommandEntries + quickActionEntries
