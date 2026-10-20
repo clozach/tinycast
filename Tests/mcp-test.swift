@@ -207,12 +207,12 @@ struct MCPTests {
     }
 
     static func settingsPersistAndKeepHandlesApart() {
-        let suite = "mcp-test-\(UUID().uuidString)"
+        let suite = scratchSuiteName("mcp-test")
         guard let defaults = UserDefaults(suiteName: suite) else {
             expect(false, "the harness can open its own defaults")
             return
         }
-        defer { defaults.removePersistentDomain(forName: suite) }
+        defer { discardSuite(suite, defaults) }
 
         let store = MCPSettingsStore(defaults: defaults)
         store.save(

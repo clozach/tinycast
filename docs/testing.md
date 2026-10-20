@@ -42,7 +42,10 @@ against the total and shows its run and compile time, a quiet stretch names the 
 than `TINYCAST_TEST_TIMEOUT` seconds (default 300) is killed and reported as timed out. Parallelism is safe
 because each harness already roots its scratch state somewhere of its own — a UUID-suffixed
 `temporaryDirectory`, a `UserDefaults(suiteName:)`, or `NSPasteboard.withUniqueName()` — and a new
-harness must keep doing that rather than reach for a fixed path.
+harness must keep doing that rather than reach for a fixed path. A defaults suite is named by
+`scratchSuiteName` and ended with `discardSuite` (`Tests/scratch-defaults.swift`, listed in the
+harness's `run` entry): cfprefsd rewrites a suite stored in `~/Library/Preferences` after the process
+exits, so deleting its plist from inside the harness never sticks and every run leaves one behind.
 
 Two consequences worth knowing. Status lines arrive in **completion order**, not the order the `run`
 lines are written; and a failing harness's compiler diagnostics or assertion output are replayed

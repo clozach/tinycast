@@ -564,12 +564,12 @@ struct WindowLayoutTests {
     // MARK: - Store
 
     static func withStore(_ body: (WindowLayoutStore) -> Void) {
-        let name = "tinycast-window-layout-test-\(UUID().uuidString)"
+        let name = scratchSuiteName("window-layout-test")
         guard let defaults = UserDefaults(suiteName: name) else {
             expect(false, "a scratch defaults suite opens")
             return
         }
-        defer { defaults.removePersistentDomain(forName: name) }
+        defer { discardSuite(name, defaults) }
         body(WindowLayoutStore(defaults: defaults))
     }
 
@@ -675,11 +675,11 @@ struct WindowLayoutTests {
     }
 
     static func storePersistence() {
-        let name = "tinycast-window-layout-test-\(UUID().uuidString)"
+        let name = scratchSuiteName("window-layout-test")
         guard let defaults = UserDefaults(suiteName: name) else {
             return expect(false, "a scratch defaults suite opens")
         }
-        defer { defaults.removePersistentDomain(forName: name) }
+        defer { discardSuite(name, defaults) }
 
         var stored: WindowLayout?
         do {
@@ -908,11 +908,11 @@ struct WindowLayoutTests {
     }
 
     static func withCustomSizeStore(_ body: (UserDefaults) -> Void) {
-        let name = "tinycast-custom-window-size-test-\(UUID().uuidString)"
+        let name = scratchSuiteName("custom-window-size-test")
         guard let defaults = UserDefaults(suiteName: name) else {
             return expect(false, "a scratch defaults suite opens")
         }
-        defer { defaults.removePersistentDomain(forName: name) }
+        defer { discardSuite(name, defaults) }
         body(defaults)
     }
 
