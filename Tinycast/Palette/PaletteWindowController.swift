@@ -91,6 +91,11 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
             core.palette.noteVisible(true)
             core.audioActivity.start()
             core.clipboardStore.setTextSearchActive(true)
+            // A test slot orders front without key, so the keyboard stays with the app in front.
+            if core.paletteIsNonKey {
+                panel.orderFrontRegardless()
+                return
+            }
             // Only while we are on screen: a system-wide tap has no business outliving the window.
             commandEscapeTap.enable()
             // Non-activating, so summoning never raises our own aux windows behind it.
@@ -172,7 +177,7 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
         FilePreviewThumbnail.purgePreviews()
         IconCache.purgeFitted()
         schedulePopToRoot()
-        guard restoreFocus else { return }
+        guard restoreFocus, !core.paletteIsNonKey else { return }
         // Our own window first: it is still open, and activating another app would bury it.
         if let own = previousOwnWindow, own.isVisible {
             own.makeKeyAndOrderFront(nil)
@@ -384,7 +389,7 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
     private func ensurePanel() -> PalettePanel {
         if let panel { return panel }
         let root = RootPaletteView().paletteEnvironment(core)
-        let panel = PalettePanel(rootView: root)
+        let panel = PalettePanel(rootView: root, acceptsKey: !core.paletteIsNonKey)
         panel.delegate = self
         panel.paletteState = core.palette
         // The switch is scoped to the palette's own editing context, never applied globally.

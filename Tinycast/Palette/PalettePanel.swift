@@ -216,7 +216,10 @@ final class PalettePanel: NSPanel {
         }
         super.sendEvent(event)
     }
-    init<Content: View>(rootView: Content) {
+    private let acceptsKey: Bool
+
+    init<Content: View>(rootView: Content, acceptsKey: Bool) {
+        self.acceptsKey = acceptsKey
         super.init(
             contentRect: NSRect(
                 x: 0, y: 0, width: Theme.Size.panelWidth, height: Theme.Size.panelHeight),
@@ -251,7 +254,7 @@ final class PalettePanel: NSPanel {
         paletteState?.noteCommandHeld(false)
     }
 
-    override var canBecomeKey: Bool { true }
+    override var canBecomeKey: Bool { acceptsKey }
     // The parent stays main while a menu is key, so its Liquid Glass remains active.
     override var canBecomeMain: Bool { true }
 }

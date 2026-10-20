@@ -57,6 +57,30 @@ the query and selection; sending to a chosen app dismisses the palette.
 Everything resolved "once per summon" is resolved there deliberately, not per render. `AppCore` holds
 only the closure wiring; the behaviour is `PaletteCoordinator`'s.
 
+## Non-key palette for test slots
+
+An agent slot (`com.tinycast.app.agent-<slot>`, built by the fork's slot launcher) runs beside the
+installed app in the same login session, so a palette that took key would take the keyboard from
+whatever the user is typing into. Launched with the environment variable `TINYCAST_PALETTE_NONKEY=1`,
+read once into `AppCore.paletteIsNonKey`, the palette is on screen but never key:
+
+- `PaletteWindowController.show` calls `orderFrontRegardless()` and nothing else: no
+  `makeKeyAndOrderFront`, no deferred re-assert, and no `CommandEscapeTap.enable()`, so no ⌘⎋ event
+  tap is ever created.
+- `PalettePanel.canBecomeKey` is false (`acceptsKey`, fixed at construction), so nothing can make it
+  key later, and a menu opened over it skips its `makeKey()` too.
+- `hide(restoreFocus:)` restores nothing: the palette never took focus, so activating the app that was
+  in front at summon time would be a focus change, not a restoration.
+- Nothing else changes. Screens, query and selection update as usual; only keyboard delivery is
+  absent, so input comes through Accessibility (set the search field's `AXValue`, press a row) or a
+  deep link. `windowDidResignKey` never fires, so the palette stays up until a row activates or the
+  process ends.
+
+The variable is the only switch: no preference, no `SettingsFileKey`, no launch argument, so neither
+`defaults write` nor a settings import can turn it on for an installed copy. A launchd job's
+environment comes only from its own plist, which is how `tinycast-agent launch --nonkey-palette`
+passes it.
+
 ## Screens
 
 At the search field's trailing caret boundary, Right opens the selected row's children when that

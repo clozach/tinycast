@@ -100,7 +100,7 @@ final class MenuPanelController {
             resetMotion: true)
         if !wasVisible, panel.parent == nil { parent.addChildWindow(panel, ordered: .above) }
         startReveal(in: panel, transition: transition, motion: motion)
-        panel.makeKey()
+        if !core.paletteIsNonKey { panel.makeKey() }
         refreshShadow(panel)
     }
 

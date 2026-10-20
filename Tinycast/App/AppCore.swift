@@ -56,6 +56,8 @@ final class AppCore {
     let audioActivity = AudioActivityMonitor()
     let appRecency = AppRecencyMonitor()
     let palette = PaletteState()
+    /// `TINYCAST_PALETTE_NONKEY=1`, test slots only: the palette shows without taking the keyboard.
+    let paletteIsNonKey = ProcessInfo.processInfo.environment["TINYCAST_PALETTE_NONKEY"] == "1"
     let fileSearch = FileSearchSession()
     let dictionary = DictionarySession()
     let menuSearch = MenuSearchSession()
