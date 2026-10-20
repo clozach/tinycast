@@ -15,9 +15,12 @@ enum QuicklinkArgumentsAccessory {
     ) -> PaletteHeaderAccessory? {
         guard let quicklink else { return nil }
         let metrics = core.settings.interfaceSize.metrics
-        let arguments = SnippetTemplateEngine.declaredArguments(in: quicklink.link).map {
+        let arguments = core.quicklinkCoordinator.promptedArguments(for: quicklink).map {
             InlineArgument(
-                id: $0.name, title: $0.name, options: $0.options, isOptional: $0.isOptional)
+                id: $0.name,
+                title: $0.name == QuicklinkCoordinator.selectionArgumentName
+                    ? String(localized: "Selected Text") : $0.name,
+                options: $0.options, isOptional: $0.isOptional)
         }
         guard !arguments.isEmpty else { return nil }
 
@@ -50,11 +53,11 @@ enum QuicklinkArgumentsAccessory {
 
     static func values(for quicklink: Quicklink, vm: PaletteState) -> [String: String] {
         var values: [String: String] = [:]
-        for argument in SnippetTemplateEngine.declaredArguments(in: quicklink.link) {
-            let typed =
-                vm.commandArguments[
-                    PaletteState.argumentKey(quicklink.entryID, argument.name)] ?? ""
-            if !typed.isEmpty { values[argument.name] = typed }
+        let names = SnippetTemplateEngine.declaredArguments(in: quicklink.link).map(\.name)
+            + [QuicklinkCoordinator.selectionArgumentName]
+        for name in names {
+            let typed = vm.commandArguments[PaletteState.argumentKey(quicklink.entryID, name)] ?? ""
+            if !typed.isEmpty { values[name] = typed }
         }
         return values
     }

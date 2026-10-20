@@ -85,6 +85,11 @@ struct Quicklink: Codable, Hashable, Identifiable, Sendable {
     }
 }
 
+enum QuicklinkSelectionFallback: String, CaseIterable, Sendable {
+    case ask
+    case clipboard
+}
+
 enum QuicklinkError: LocalizedError, Equatable {
     case emptyName
     case emptyLink
