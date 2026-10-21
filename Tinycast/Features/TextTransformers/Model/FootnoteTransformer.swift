@@ -7,18 +7,9 @@ enum FootnoteTransformer {
     }
 
     static func transform(_ text: String, selection: NSRange) throws -> String {
-        guard selection.location >= 0, selection.length >= 0,
-            selection.location <= text.utf16.count,
-            selection.length <= text.utf16.count - selection.location,
-            isScalarBoundary(selection.location, in: text),
-            isScalarBoundary(NSMaxRange(selection), in: text),
-            let selected = Range(selection, in: text)
-        else { throw Failure.invalidSelection }
-        let newline = try lineEnding(in: text)
-        let normalized = text.replacingOccurrences(of: newline, with: "\n")
-        let start = text[..<selected.lowerBound].replacingOccurrences(of: newline, with: "\n").utf16.count
-        let length = text[selected].replacingOccurrences(of: newline, with: "\n").utf16.count
-        let range = try enclosing(in: normalized, selection: NSRange(location: start, length: length))
+        let document = try MarkdownSelection(text, selection: selection)
+        let normalized = document.text
+        let range = try enclosing(in: normalized, selection: document.range)
         let source = normalized as NSString
         var aside = source.substring(with: NSRange(location: range.location + 1, length: range.length - 2))
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -45,13 +36,7 @@ enum FootnoteTransformer {
         }
         let result = try MarkdownFootnotes.render(
             body: split.body, definitions: split.definitions + [.init(label: marker, content: aside)])
-        return result.replacingOccurrences(of: "\n", with: newline)
-    }
-
-    private static func isScalarBoundary(_ offset: Int, in text: String) -> Bool {
-        guard offset < text.utf16.count else { return true }
-        let unit = text.utf16[text.utf16.index(text.utf16.startIndex, offsetBy: offset)]
-        return !(0xDC00...0xDFFF).contains(unit)
+        return document.restoringLineEndings(result)
     }
 
     private static func sentenceCase(_ text: String) -> String {
@@ -69,19 +54,6 @@ enum FootnoteTransformer {
             offset += String(character).utf16.count
         }
         return text
-    }
-
-    private static func lineEnding(in text: String) throws -> String {
-        let withoutPairs = text.replacingOccurrences(of: "\r\n", with: "")
-        if text.contains("\r\n") {
-            guard !withoutPairs.contains("\n"), !withoutPairs.contains("\r") else { throw Failure.mixedLineEndings }
-            return "\r\n"
-        }
-        if text.contains("\r") {
-            guard !text.contains("\n") else { throw Failure.mixedLineEndings }
-            return "\r"
-        }
-        return "\n"
     }
 
     private static func enclosing(in text: String, selection: NSRange) throws -> NSRange {

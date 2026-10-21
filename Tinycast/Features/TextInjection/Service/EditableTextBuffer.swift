@@ -10,7 +10,6 @@ struct EditableTextBuffer {
 
     static func capture(in app: NSRunningApplication) -> EditableTextBuffer? {
         guard let element = AccessibilityText.focusedElement(in: app),
-            !AccessibilityText.usesTextMarkerSelection(element),
             let role = attribute(kAXRoleAttribute, in: element) as? String,
             [kAXTextAreaRole, kAXTextFieldRole].contains(role),
             attribute(kAXSubroleAttribute, in: element) as? String != kAXSecureTextFieldSubrole,
@@ -43,7 +42,6 @@ struct EditableTextBuffer {
     @discardableResult
     func select(_ range: NSRange) -> Bool {
         AccessibilityText.setSelectedRange(range, in: element)
-            && AccessibilityText.selectedRange(in: element) == range
     }
 
     private static func attribute(_ name: String, in element: AXUIElement) -> CFTypeRef? {

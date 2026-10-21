@@ -121,7 +121,10 @@ See [Send to](features/send-to.md).
 
 `TextTransformerCoordinator`, owned by `AppCore`, captures the external editor through
 `EditableTextBuffer`, evaluates a Foundation-only transformer, and delivers a guarded whole-buffer
-paste through `TextInjector`. See [Text transformers](features/text-transformers.md).
+paste through `TextInjector`. `TemporaryPasteboardLease` restores borrowed clipboard contents or
+commits a lifted footnote after the edited buffer is confirmed. Obsidian uses `ObsidianTextBuffer`
+and its enabled CLI to read the complete editor and apply one guarded editor transaction, including
+off-screen text. See [Text transformers](features/text-transformers.md).
 
 Clipboard text recognition runs outside the process. `AppCore` owns the indexer;
 the stateless `ClipboardTextWorker` runs one bundled `ClipboardTextHelper` per item, from

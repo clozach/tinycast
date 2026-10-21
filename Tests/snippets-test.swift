@@ -984,6 +984,24 @@ struct SnippetsTests {
             supersededLease?.restoreIfOwned() == .superseded
                 && pasteboard.string(forType: .string) == "Newer copy")
 
+        let cutLease = TemporaryPasteboardLease.begin(text: "Rewritten buffer", pasteboard: pasteboard)
+        check("a lifted note becomes an ordinary clipboard item", cutLease?.commitPlainText("Lifted body") == true
+            && pasteboard.string(forType: .string) == "Lifted body"
+            && pasteboard.pasteboardItems?.first?.types == [.string])
+        check("finishing delivery keeps the lifted note", cutLease?.restoreIfOwned() == .superseded
+            && pasteboard.string(forType: .string) == "Lifted body")
+        let interruptedCut = TemporaryPasteboardLease.begin(text: "Another buffer", pasteboard: pasteboard)
+        let interveningItem = NSPasteboardItem()
+        interveningItem.setString("Newer copy", forType: .string)
+        _ = pasteboard.replaceObjects([interveningItem])
+        check("lifting never overwrites an intervening copy", interruptedCut?.commitPlainText("Do not copy") == false
+            && pasteboard.string(forType: .string) == "Newer copy")
+        let failedCut = TemporaryPasteboardLease.begin(text: "Buffer", pasteboard: pasteboard)
+        pasteboard.writeFailuresRemaining = 1
+        check("failed final copy is reported", failedCut?.commitPlainText("Failed body") == false)
+        check("failed final copy can restore the original", failedCut?.restoreIfOwned() != nil
+            && pasteboard.string(forType: .string) == "Newer copy")
+
         _ = pasteboard.replaceObjects([])
         let emptyLease = TemporaryPasteboardLease.begin(
             text: "Temporary from empty",

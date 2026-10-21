@@ -18,11 +18,13 @@ enum ToolRunner {
 
     /// A nil `timeout` never kills: the tool may be waiting on a person rather than wedged.
     static func run(
-        _ executable: URL, _ arguments: [String], timeout: TimeInterval? = 120
+        _ executable: URL, _ arguments: [String], timeout: TimeInterval? = 120,
+        workingDirectory: URL? = nil
     ) async throws -> Result {
         let process = Process()
         process.executableURL = executable
         process.arguments = arguments
+        process.currentDirectoryURL = workingDirectory
 
         let pipe = Pipe()
         process.standardOutput = pipe

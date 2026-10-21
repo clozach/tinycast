@@ -6,12 +6,16 @@ enum MarkdownFootnotes {
         let content: String
     }
 
-    static func split(_ text: String) throws -> (body: String, definitions: [Definition]) {
-        let source = text as NSString
+    static func definitionHeaders(in text: String) throws -> [NSTextCheckingResult] {
         let mask = MarkdownSyntaxMask.make(text)
         let expression = try NSRegularExpression(pattern: #"(?m)^ {0,3}\[\^([^\]\s]+)\]:[ \t]*(.*)$"#)
-        let headers = expression.matches(in: text, range: NSRange(location: 0, length: source.length))
+        return expression.matches(in: text, range: NSRange(location: 0, length: text.utf16.count))
             .filter { !mask[$0.range.location] }
+    }
+
+    static func split(_ text: String) throws -> (body: String, definitions: [Definition]) {
+        let source = text as NSString
+        let headers = try definitionHeaders(in: text)
         var definitions: [Definition] = []
         var removed: [NSRange] = []
         var labels = Set<String>()
@@ -94,6 +98,7 @@ enum MarkdownFootnotes {
             let continuation = lines.dropFirst().map { $0.isEmpty ? "" : "    " + $0 }.joined(separator: "\n")
             return "[^\(numbers[label]!)]: " + lines[0] + (lines.count > 1 ? "\n" + continuation : "")
         }
-        return result + "\n\n" + notes.joined(separator: "\n\n")
+        guard !notes.isEmpty else { return result }
+        return result + (result.isEmpty ? "" : "\n\n") + notes.joined(separator: "\n\n")
     }
 }

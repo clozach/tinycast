@@ -104,6 +104,8 @@ run() {
 }
 
 run footnote-transformer-test Tinycast/Features/TextTransformers/Model/*.swift
+run footnote-lift-test Tinycast/Features/TextTransformers/Model/*.swift
+run obsidian-editor-script-test Tinycast/Features/TextTransformers/Model/ObsidianEditorScript.swift
 
 L=Tinycast/Features/Launcher/Model
 run slow -O fuzz-test      $L/SearchRelevance.swift $L/ScriptRomanization.swift \

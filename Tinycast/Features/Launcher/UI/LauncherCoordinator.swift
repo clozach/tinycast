@@ -257,6 +257,8 @@ final class LauncherCoordinator {
             core.teachCoordinator.request()
         case .extractFootnote:
             core.textTransformerCoordinator.extractFootnote()
+        case .liftFootnote:
+            core.textTransformerCoordinator.liftFootnote()
         case .createQuicklink:
             quicklinkCoordinator.editQuicklink(nil)
         case .createCustomCommand:
