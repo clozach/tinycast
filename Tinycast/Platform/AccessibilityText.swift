@@ -80,4 +80,67 @@ enum AccessibilityText {
         else { return nil }
         return value as? String
     }
+
+    static func usesTextMarkerSelection(_ element: AXUIElement) -> Bool {
+        var value: CFTypeRef?
+        guard
+            AXUIElementCopyAttributeValue(
+                element,
+                kAXSelectedTextMarkerRangeAttribute as CFString,
+                &value) == .success,
+            let value
+        else { return false }
+        return CFGetTypeID(value) == AXTextMarkerRangeGetTypeID()
+    }
+
+    static func stringValue(in element: AXUIElement) -> String? {
+        var value: CFTypeRef?
+        guard
+            AXUIElementCopyAttributeValue(
+                element,
+                kAXValueAttribute as CFString,
+                &value) == .success
+        else { return nil }
+        return value as? String
+    }
+
+    static func selectedRange(in element: AXUIElement) -> NSRange? {
+        var value: CFTypeRef?
+        guard
+            AXUIElementCopyAttributeValue(
+                element,
+                kAXSelectedTextRangeAttribute as CFString,
+                &value) == .success,
+            let value,
+            CFGetTypeID(value) == AXValueGetTypeID()
+        else { return nil }
+
+        let axValue = value as! AXValue
+        guard AXValueGetType(axValue) == .cfRange else { return nil }
+        var range = CFRange()
+        guard AXValueGetValue(axValue, .cfRange, &range),
+            range.location >= 0, range.length >= 0, range.location <= Int.max - range.length
+        else { return nil }
+        return NSRange(location: range.location, length: range.length)
+    }
+
+    static func setSelectedRange(_ range: NSRange, in element: AXUIElement) -> Bool {
+        var cfRange = CFRange(location: range.location, length: range.length)
+        guard let value = AXValueCreate(.cfRange, &cfRange) else { return false }
+        return AXUIElementSetAttributeValue(
+            element,
+            kAXSelectedTextRangeAttribute as CFString,
+            value) == .success
+    }
+
+    static func isAttributeSettable(_ attribute: String, in element: AXUIElement) -> Bool {
+        var settable = DarwinBoolean(false)
+        guard
+            AXUIElementIsAttributeSettable(
+                element,
+                attribute as CFString,
+                &settable) == .success
+        else { return false }
+        return settable.boolValue
+    }
 }

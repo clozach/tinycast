@@ -255,6 +255,8 @@ final class LauncherCoordinator {
             core.roomCoordinator.createRoom()
         case .teach:
             core.teachCoordinator.request()
+        case .extractFootnote:
+            core.textTransformerCoordinator.extractFootnote()
         case .createQuicklink:
             quicklinkCoordinator.editQuicklink(nil)
         case .createCustomCommand:

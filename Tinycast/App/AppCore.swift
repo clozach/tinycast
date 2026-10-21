@@ -93,6 +93,7 @@ final class AppCore {
     var pendingExtensionStoreInstall: ExtensionDeepLink.StoreInstall?
 
     @ObservationIgnored private(set) lazy var teachCoordinator = TeachCoordinator(core: self, windowController: windowController)
+    @ObservationIgnored private(set) lazy var textTransformerCoordinator = TextTransformerCoordinator(core: self)
     @ObservationIgnored private(set) lazy var snippetCoordinator = SnippetCoordinator(
         store: snippetsStore, listener: snippetListener, injector: textInjector,
         clipboardStore: clipboardStore, appIndex: appIndex, settings: settings,

@@ -36,6 +36,7 @@ enum CommandID: String, CaseIterable, Sendable {
     case switchRoom = "command:switch-room"
     case createRoom = "command:create-room"
     case teach = "command:teach-tinycast"
+    case extractFootnote = "command:extract-footnote"
     case createQuicklink = "command:create-quicklink"
     case searchQuicklinks = "command:search-quicklinks"
     case importQuicklinks = "command:import-quicklinks"
@@ -91,6 +92,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .switchRoom: return "Switch Room"
         case .createRoom: return "Create Room"
         case .teach: return "Teach Tinycast"
+        case .extractFootnote: return "Extract Markdown Footnote"
         case .createQuicklink: return "Create Quicklink"
         case .searchQuicklinks: return "Search Quicklinks"
         case .importQuicklinks: return "Import Quicklinks"
@@ -143,6 +145,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .switchRoom: return "door.left.hand.open"
         case .createRoom: return "rectangle.stack.badge.plus"
         case .teach: return "character.cursor.ibeam"
+        case .extractFootnote: return "text.append"
         case .createQuicklink: return "link.badge.plus"
         case .searchQuicklinks: return Quicklink.sfSymbol
         case .importQuicklinks: return "square.and.arrow.down"

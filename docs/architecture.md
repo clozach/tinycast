@@ -96,7 +96,7 @@ app: the stores (`AppIndex`, `ClipboardStore`, `SnippetsStore`, `QuicklinkStore`
 `HotKeyManager`, `HyperKeyManager`, `DictationKeyManager`, `RunningAppsMonitor`,
 `SnippetKeywordListener`), the shared state
 (`AppSettings`, `PaletteState`, `FileSearchSession`, `MenuSearchSession`, `UninstallSession`,
-`MeetingClock`), `NotesStore`, the twenty-one feature coordinators, and the
+`MeetingClock`), `NotesStore`, the feature coordinators, and the
 window controllers.
 
 `AppDelegate.applicationDidFinishLaunching` calls `AppCore.shared.start()` and nothing else. That is the
@@ -118,6 +118,10 @@ registers a weak `SendToSource`; palette screens provide their current item thro
 `PaletteScreen.sendToPayload(at:)`. Selected content text takes precedence, then the current item,
 then a labelled frozen clipboard snapshot. Discovery and delivery live in `Features/SendTo/Service`.
 See [Send to](features/send-to.md).
+
+`TextTransformerCoordinator`, owned by `AppCore`, captures the external editor through
+`EditableTextBuffer`, evaluates a Foundation-only transformer, and delivers a guarded whole-buffer
+paste through `TextInjector`. See [Text transformers](features/text-transformers.md).
 
 Clipboard text recognition runs outside the process. `AppCore` owns the indexer;
 the stateless `ClipboardTextWorker` runs one bundled `ClipboardTextHelper` per item, from

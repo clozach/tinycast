@@ -1,6 +1,266 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Extract Markdown Footnote" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown-Fußnote auslagern"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extraer nota al pie de Markdown"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extraire une note de bas de page Markdown"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown の脚注に変換"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown 각주로 추출"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extrair nota de rodapé Markdown"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вынести в сноску Markdown"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提取为 Markdown 脚注"
+          }
+        }
+      }
+    },
+    "This editor does not expose its complete text buffer. No text was changed." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Editor stellt nicht seinen gesamten Text bereit. Der Text wurde nicht geändert."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este editor no permite acceder a todo su texto. No se ha cambiado nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet éditeur ne donne pas accès à tout son texte. Aucun texte n’a été modifié."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このエディタではテキスト全体を取得できません。テキストは変更されていません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 편집기는 전체 텍스트에 대한 접근을 제공하지 않습니다. 텍스트는 변경되지 않았습니다."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este editor não disponibiliza o texto completo. Nenhum texto foi alterado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот редактор не предоставляет весь текст. Текст не изменён."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此编辑器不提供完整文本。文本未被更改。"
+          }
+        }
+      }
+    },
+    "Select an aside inside balanced parentheses in a document with valid Markdown footnotes." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle einen Einschub in zusammengehörigen Klammern in einem Dokument mit gültigen Markdown-Fußnoten aus."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecciona un inciso entre paréntesis emparejados en un documento con notas al pie de Markdown válidas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sélectionnez une incise entre parenthèses appariées dans un document avec des notes Markdown valides."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有効な Markdown 脚注がある文書で、対応する丸括弧内の補足を選択してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "유효한 Markdown 각주가 있는 문서에서 짝이 맞는 괄호 안의 부연 설명을 선택하세요."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecione um aparte entre parênteses correspondentes num documento com notas de rodapé Markdown válidas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите отступление в парных скобках в документе с корректными сносками Markdown."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在具有有效 Markdown 脚注的文档中，选择成对圆括号内的补充说明。"
+          }
+        }
+      }
+    },
+    "Footnote added. Press ⌘Z in your editor to undo." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fußnote hinzugefügt. Mit ⌘Z im Editor rückgängig machen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nota al pie añadida. Pulsa ⌘Z en tu editor para deshacer."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note ajoutée. Appuyez sur ⌘Z dans votre éditeur pour annuler."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "脚注を追加しました。エディタで ⌘Z を押すと取り消せます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "각주를 추가했습니다. 편집기에서 ⌘Z를 눌러 실행 취소하세요."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nota de rodapé adicionada. Prima ⌘Z no editor para desfazer."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сноска добавлена. Нажмите ⌘Z в редакторе для отмены."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已添加脚注。在编辑器中按 ⌘Z 可撤销。"
+          }
+        }
+      }
+    },
+    "The edit could not be confirmed. Check your editor before trying again; ⌘Z undoes a paste." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Änderung konnte nicht bestätigt werden. Prüfe den Editor vor einem weiteren Versuch; ⌘Z macht das Einfügen rückgängig."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo confirmar la edición. Revisa tu editor antes de intentarlo de nuevo; ⌘Z deshace el pegado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La modification n’a pas pu être confirmée. Vérifiez votre éditeur avant de réessayer ; ⌘Z annule le collage."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編集を確認できませんでした。再試行する前にエディタを確認してください。⌘Z で貼り付けを取り消せます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "편집 결과를 확인하지 못했습니다. 다시 시도하기 전에 편집기를 확인하세요. ⌘Z로 붙여넣기를 취소할 수 있습니다."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível confirmar a edição. Verifique o editor antes de tentar novamente; ⌘Z desfaz a colagem."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось подтвердить правку. Проверьте редактор перед повтором; ⌘Z отменяет вставку."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法确认编辑结果。请先检查编辑器再重试；按 ⌘Z 可撤销粘贴。"
+          }
+        }
+      }
+    },
     "" : {
 
     },

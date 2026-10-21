@@ -120,6 +120,52 @@ final class TextInjector {
 
     func drain() async { await deliveryQueue.drain() }
 
+    func replaceBuffer(
+        _ buffer: EditableTextBuffer, with text: String,
+        onDelivered: @escaping @MainActor () -> Void,
+        onFailed: @escaping @MainActor () -> Void
+    ) {
+        deliveryQueue.enqueue(isAutomatic: false) { [weak self] in
+            guard let self else { onFailed(); return }
+            let completion = DeliveryCompletion(onDelivered: onDelivered, onFailed: onFailed)
+            defer { completion.settle() }
+            guard finishPendingPasteboardOwnership(),
+                await activateAndWaitForTarget(buffer.app, automaticGeneration: nil),
+                buffer.matches(selection: buffer.selection),
+                deliveryIsAllowed(
+                    automaticGeneration: nil, targetApp: buffer.app,
+                    promptForInteractiveAccessibility: false),
+                let lease = beginTemporaryPasteboardLease(text)
+            else { return }
+            activePasteboardLease = lease
+            defer { finish(lease) }
+            let entireBuffer = NSRange(location: 0, length: buffer.text.utf16.count)
+            guard buffer.select(entireBuffer) else {
+                if buffer.observedText == buffer.text { buffer.select(buffer.selection) }
+                return
+            }
+            defer {
+                if buffer.matches(selection: entireBuffer) { buffer.select(buffer.selection) }
+            }
+            guard await wait(for: .milliseconds(50)), lease.isOwned,
+                buffer.matches(selection: entireBuffer),
+                deliveryIsAllowed(
+                    automaticGeneration: nil, targetApp: buffer.app,
+                    promptForInteractiveAccessibility: false)
+            else { return }
+            // One native paste lets the source editor own the whole-buffer undo transaction.
+            Paster.postCommandV(toPid: buffer.app.processIdentifier)
+            for _ in 0..<80 {
+                guard await wait(for: .milliseconds(25)) else { return }
+                if buffer.observedText == text {
+                    completion.confirm()
+                    return
+                }
+                guard lease.isOwned else { return }
+            }
+        }
+    }
+
     func prepareInteractiveExpansion(target: InjectionTarget?) -> Bool {
         if let editor = target?.ownEditor { return editor.isEditable }
         guard targetAcceptsInjection(target?.externalApp), Permissions.ensureAccessibility() else {
@@ -661,7 +707,7 @@ final class TextInjector {
             return .unavailable
         }
 
-        guard setSelectedRange(target.replacementRange, in: target.element) else {
+        guard AccessibilityText.setSelectedRange(target.replacementRange, in: target.element) else {
             return .unavailable
         }
         guard
@@ -670,11 +716,11 @@ final class TextInjector {
                 kAXSelectedTextAttribute as CFString,
                 injected.text as CFString) == .success
         else {
-            _ = setSelectedRange(target.originalRange, in: target.element)
+            _ = AccessibilityText.setSelectedRange(target.originalRange, in: target.element)
             return .unavailable
         }
 
-        let observed = stringValue(in: target.element)
+        let observed = AccessibilityText.stringValue(in: target.element)
         guard
             TextReplacementPolicy.confirmsReplacement(
                 originalValue: target.value,
@@ -682,12 +728,12 @@ final class TextInjector {
                 insertedText: injected.text,
                 observedValue: observed)
         else {
-            _ = setSelectedRange(target.originalRange, in: target.element)
+            _ = AccessibilityText.setSelectedRange(target.originalRange, in: target.element)
             // An untouched value is a tier that did nothing; anything else moved text we cannot name.
             return observed == target.value ? .unavailable : .rejected
         }
 
-        _ = setSelectedRange(
+        _ = AccessibilityText.setSelectedRange(
             NSRange(
                 location: target.replacementRange.location + injected.caretPrefixLength, length: 0),
             in: target.element)
@@ -725,11 +771,11 @@ final class TextInjector {
         keywordLength: Int
     ) -> AccessibilityTargetState {
         guard let element = AccessibilityText.focusedElement(in: targetApp),
-            !usesTextMarkerSelection(element),
-            isAttributeSettable(kAXSelectedTextRangeAttribute, in: element),
-            isAttributeSettable(kAXSelectedTextAttribute, in: element),
-            let value = stringValue(in: element),
-            let originalRange = selectedRange(in: element)
+            !AccessibilityText.usesTextMarkerSelection(element),
+            AccessibilityText.isAttributeSettable(kAXSelectedTextRangeAttribute, in: element),
+            AccessibilityText.isAttributeSettable(kAXSelectedTextAttribute, in: element),
+            let value = AccessibilityText.stringValue(in: element),
+            let originalRange = AccessibilityText.selectedRange(in: element)
         else { return .unavailable }
 
         guard keywordLength > 0 else {
@@ -752,19 +798,6 @@ final class TextInjector {
         case .pending: return .pending
         case .rejected: return .rejected
         }
-    }
-
-    /// Web content and Monaco expose selection only as markers; their `AXValue` trails or is empty.
-    private func usesTextMarkerSelection(_ element: AXUIElement) -> Bool {
-        var value: CFTypeRef?
-        guard
-            AXUIElementCopyAttributeValue(
-                element,
-                kAXSelectedTextMarkerRangeAttribute as CFString,
-                &value) == .success,
-            let value
-        else { return false }
-        return CFGetTypeID(value) == AXTextMarkerRangeGetTypeID()
     }
 
     /// A renderer, or AppKit handing us our own keystroke, converges in single-digit milliseconds.
@@ -809,60 +842,11 @@ final class TextInjector {
     ) -> AccessibilityTextState? {
         guard let targetApp,
             let element = AccessibilityText.focusedElement(in: targetApp),
-            !usesTextMarkerSelection(element),
-            let value = stringValue(in: element),
-            let selectedRange = selectedRange(in: element)
+            !AccessibilityText.usesTextMarkerSelection(element),
+            let value = AccessibilityText.stringValue(in: element),
+            let selectedRange = AccessibilityText.selectedRange(in: element)
         else { return nil }
         return AccessibilityTextState(value: value, selectedRange: selectedRange)
-    }
-
-    private func stringValue(in element: AXUIElement) -> String? {
-        var value: CFTypeRef?
-        guard
-            AXUIElementCopyAttributeValue(
-                element,
-                kAXValueAttribute as CFString,
-                &value) == .success
-        else { return nil }
-        return value as? String
-    }
-
-    private func selectedRange(in element: AXUIElement) -> NSRange? {
-        var value: CFTypeRef?
-        guard
-            AXUIElementCopyAttributeValue(
-                element,
-                kAXSelectedTextRangeAttribute as CFString,
-                &value) == .success,
-            let value,
-            CFGetTypeID(value) == AXValueGetTypeID()
-        else { return nil }
-
-        let axValue = value as! AXValue
-        guard AXValueGetType(axValue) == .cfRange else { return nil }
-        var range = CFRange()
-        guard AXValueGetValue(axValue, .cfRange, &range) else { return nil }
-        return NSRange(location: range.location, length: range.length)
-    }
-
-    private func setSelectedRange(_ range: NSRange, in element: AXUIElement) -> Bool {
-        var cfRange = CFRange(location: range.location, length: range.length)
-        guard let value = AXValueCreate(.cfRange, &cfRange) else { return false }
-        return AXUIElementSetAttributeValue(
-            element,
-            kAXSelectedTextRangeAttribute as CFString,
-            value) == .success
-    }
-
-    private func isAttributeSettable(_ attribute: String, in element: AXUIElement) -> Bool {
-        var settable = DarwinBoolean(false)
-        guard
-            AXUIElementIsAttributeSettable(
-                element,
-                attribute as CFString,
-                &settable) == .success
-        else { return false }
-        return settable.boolValue
     }
 
     private func activate(_ targetApp: NSRunningApplication?) {
