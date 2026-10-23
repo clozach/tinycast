@@ -649,8 +649,8 @@ in the view command's launch props as well.
 
 A `no-view` command declaring `interval` (`"90s"`, `"1m"`, `"12h"`, `"1d"`) re-runs headlessly on that
 schedule, on the semantics extensions are authored against: the same bundle runs to completion with
-`environment.launchType` and `props.launchType` set to `Background`, and `updateCommandMetadata` is
-the only thing that escapes it — the subtitle it writes appears beside the command's name in launcher
+`environment.launchType` and `props.launchType` set to `Background`. `updateCommandMetadata` writes
+a subtitle that appears beside the command's name in launcher
 search, unless it merely restates the owning extension, which the row already carries on the right.
 After a scheduled batch, Refresh Now, or a manually run scheduled command completes, Tinycast rescans
 installed manifests. Commands that regenerate their catalog therefore publish new root-search entries
