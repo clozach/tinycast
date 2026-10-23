@@ -652,6 +652,9 @@ schedule, on the semantics extensions are authored against: the same bundle runs
 `environment.launchType` and `props.launchType` set to `Background`, and `updateCommandMetadata` is
 the only thing that escapes it — the subtitle it writes appears beside the command's name in launcher
 search, unless it merely restates the owning extension, which the row already carries on the right.
+After a scheduled batch, Refresh Now, or a manually run scheduled command completes, Tinycast rescans
+installed manifests. Commands that regenerate their catalog therefore publish new root-search entries
+without reopening Settings or restarting the app. Disabled extensions remain unscanned.
 Coffee's "Caffeinate Status" is the reference case: every minute it rewrites its subtitle to
 `✔ Caffeinated (…)` or `✖ Decaffeinated`.
 

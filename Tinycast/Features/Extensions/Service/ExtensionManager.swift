@@ -576,6 +576,7 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
         }
         Task { [weak self] in
             await self?.runInBackground(owner, command: command)
+            await self?.refresh()
             self?.restartBackgroundLoop()
         }
     }
@@ -646,6 +647,7 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
             guard !Task.isCancelled, isEnabled, running == nil else { break }
             await runInBackground(owner, command: command)
         }
+        if !Task.isCancelled { await refresh() }
     }
 
     /// Capped, so an install or a toggle surfaces without anyone restarting the loop.
@@ -873,9 +875,15 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
             return
         }
         guard session == sessionID else { return }
+        let refreshCatalog = running.flatMap { reference in
+            extensionNamed(reference.extensionName)?.command(named: reference.commandName)?.interval
+        } != nil
         // A no-view command is done: the palette is already closing, so just release the session.
         state = .finished
-        Task { await stop() }
+        Task {
+            await stop()
+            if refreshCatalog { await refresh() }
+        }
     }
 
     func runtime(_ runtime: ExtensionRuntime, log level: String, message: String) {
