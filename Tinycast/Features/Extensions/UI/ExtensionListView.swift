@@ -92,9 +92,11 @@ struct ExtensionListView: View {
                 .hideNativeScrollers()
                 .scrollOriginAnchor()
             }
-            .modifier(ExtensionPaginationModifier(
-                page: screen.paginationPage, handler: screen.paginationHandler,
-                isLoading: screen.isLoading, dispatch: onDispatch))
+            .modifier(
+                ExtensionPaginationModifier(
+                    page: screen.paginationPage, handler: screen.paginationHandler,
+                    isLoading: screen.isLoading, dispatch: onDispatch)
+            )
             .edgeDissolve()
             .thinScrollbar()
             .scrollFollowsSelection(
@@ -163,9 +165,11 @@ struct ExtensionListView: View {
                 .hideNativeScrollers()
                 .scrollOriginAnchor()
             }
-            .modifier(ExtensionPaginationModifier(
-                page: screen.paginationPage, handler: screen.paginationHandler,
-                isLoading: screen.isLoading, dispatch: onDispatch))
+            .modifier(
+                ExtensionPaginationModifier(
+                    page: screen.paginationPage, handler: screen.paginationHandler,
+                    isLoading: screen.isLoading, dispatch: onDispatch)
+            )
             .edgeDissolve()
             .thinScrollbar()
             .scrollFollowsSelection(
@@ -444,6 +448,9 @@ private struct ExtensionGridContentView: View {
         case .glyph(let text):
             Text(text)
                 .font(.system(size: min(size.width, size.height) * 0.72))
+                .lineLimit(1)
+                .minimumScaleFactor(0.1)
+                .allowsTightening(false)
         case .file, .fileIcon, .remote, .inline:
             if let loaded {
                 image(loaded)

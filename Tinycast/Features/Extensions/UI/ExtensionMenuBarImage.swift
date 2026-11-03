@@ -32,8 +32,21 @@ enum ExtensionMenuBarImage {
             template = resolved.tint == nil
         case .glyph(let text):
             source = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+                let baseSize = max(1, size - 2)
+                let measured = (text as NSString).size(withAttributes: [
+                    .font: NSFont.systemFont(ofSize: baseSize)
+                ])
+                let scale = min(1, rect.width / max(1, measured.width), rect.height / max(1, measured.height))
+                let attributes: [NSAttributedString.Key: Any] = [
+                    .font: NSFont.systemFont(ofSize: baseSize * scale),
+                    .foregroundColor: isDark ? NSColor.white : NSColor.black
+                ]
+                let fitted = (text as NSString).size(withAttributes: attributes)
                 (text as NSString).draw(
-                    in: rect, withAttributes: [.font: NSFont.systemFont(ofSize: size - 2)])
+                    at: NSPoint(
+                        x: (rect.width - fitted.width) / 2,
+                        y: (rect.height - fitted.height) / 2),
+                    withAttributes: attributes)
                 return true
             }
         default:

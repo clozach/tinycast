@@ -417,6 +417,9 @@ struct ExtensionIconView: View {
         case .glyph(let text):
             Text(text)
                 .font(.system(size: side * 0.72))
+                .lineLimit(1)
+                .minimumScaleFactor(0.1)
+                .allowsTightening(false)
                 .frame(width: side, height: side)
         case .file, .fileIcon, .remote, .inline:
             if let loaded {
