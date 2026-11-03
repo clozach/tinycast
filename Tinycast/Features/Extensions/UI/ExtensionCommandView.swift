@@ -11,6 +11,7 @@ struct ExtensionCommandView: View {
     let onCommandActivate: (Int) -> Void
     let onActions: (Int) -> Void
     let onFieldChange: (RenderNode, Any) -> Void
+    var onDispatch: (String) -> Void = { _ in }
 
     var body: some View {
         content
@@ -32,7 +33,7 @@ struct ExtensionCommandView: View {
                 ExtensionListView(
                     screen: screen, selection: selection, assetsPath: assetsPath,
                     scroll: scroll, onSelect: onSelect, onActivate: onActivate,
-                    onCommandActivate: onCommandActivate, onActions: onActions)
+                    onCommandActivate: onCommandActivate, onActions: onActions, onDispatch: onDispatch)
             case .detail:
                 ExtensionDetailBody(
                     markdown: screen.root?.string("markdown"),

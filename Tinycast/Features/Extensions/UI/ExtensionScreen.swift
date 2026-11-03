@@ -65,6 +65,17 @@ struct ExtensionScreen: Equatable {
     /// Actions attached to the screen itself (`Detail`/`Form`/`List` level).
     let screenActions: RenderNode?
     let emptyView: RenderNode?
+    private let paginationQuery: String
+
+    var paginationHandler: String? {
+        guard root?.object("pagination")?["hasMore"]?.boolValue == true else { return nil }
+        return root?.object("pagination")?["onLoadMore"]?.handlerID
+    }
+
+    var paginationPage: ExtensionPaginationState.Page {
+        .init(rootID: root?.id ?? 0, query: paginationQuery, count: items.count,
+              firstID: items.first?.id, lastID: items.last?.id)
+    }
 
     /// Selectable rows per section: what grid navigation needs to keep a column across a heading.
     var sectionCounts: [Int] {
@@ -111,6 +122,7 @@ struct ExtensionScreen: Equatable {
             return
         }
         self.root = root
+        paginationQuery = query
         isLoading = root.bool("isLoading") ?? false
         navigationTitle = root.string("navigationTitle")
         searchPlaceholder = root.string("searchBarPlaceholder")
@@ -213,6 +225,7 @@ struct ExtensionScreen: Equatable {
         self.showsDetail = showsDetail
         self.screenActions = screenActions
         self.emptyView = emptyView
+        paginationQuery = ""
     }
 
     var selectedItemIndex: Int? {

@@ -708,6 +708,7 @@ run ext-form-test          $E/Model/ExtensionFormMetrics.swift \
                            $E/Model/ExtensionDateExpression.swift \
                            $E/UI/ExtensionListKey.swift \
                            Tests/ext-list-key-test.swift
+run ext-pagination-test $E/Model/ExtensionPaginationState.swift
 run ext-image-size-test   $E/Model/ExtensionImageSize.swift
 run ext-oauth-security-test $E/Service/ExtensionOAuthKeychain.swift $E/Service/ExtensionStorage.swift
 run ext-accessory-test     Tests/ext-oauth-test-store.swift $E/Model/RenderNode.swift \
@@ -753,6 +754,7 @@ run slow ext-test          -parse-as-library Tests/ext-oauth-test-store.swift \
                            $E/Service/ExtensionWebSocketBridge.swift \
                            $E/UI/ExtensionAnimatedImage.swift \
                            $E/UI/ExtensionImage.swift \
+                           $E/Model/ExtensionPaginationState.swift \
                            $E/UI/ExtensionScreen.swift \
                            $E/UI/ExtensionSendTo.swift \
                            Tinycast/Features/SendTo/Model/SendToPayload.swift \

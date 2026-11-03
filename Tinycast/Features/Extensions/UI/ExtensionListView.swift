@@ -14,6 +14,7 @@ struct ExtensionListView: View {
     /// ⌘-click: the item's ⌘↵ action, as the keyboard would run it.
     var onCommandActivate: ((Int) -> Void)?
     let onActions: (Int) -> Void
+    var onDispatch: (String) -> Void = { _ in }
 
     private static let detailListWidth: CGFloat = 290
 
@@ -91,6 +92,9 @@ struct ExtensionListView: View {
                 .hideNativeScrollers()
                 .scrollOriginAnchor()
             }
+            .modifier(ExtensionPaginationModifier(
+                page: screen.paginationPage, handler: screen.paginationHandler,
+                isLoading: screen.isLoading, dispatch: onDispatch))
             .edgeDissolve()
             .thinScrollbar()
             .scrollFollowsSelection(
@@ -159,6 +163,9 @@ struct ExtensionListView: View {
                 .hideNativeScrollers()
                 .scrollOriginAnchor()
             }
+            .modifier(ExtensionPaginationModifier(
+                page: screen.paginationPage, handler: screen.paginationHandler,
+                isLoading: screen.isLoading, dispatch: onDispatch))
             .edgeDissolve()
             .thinScrollbar()
             .scrollFollowsSelection(

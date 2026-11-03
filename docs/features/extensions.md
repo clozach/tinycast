@@ -246,6 +246,10 @@ screens hold (see [palette.md](palette.md)).
   `onSelectionChange` is reported with that visible item's string id. The observer keys on the id,
   not just the numeric index, because local filtering can replace row zero without changing the
   palette selection; an empty result reports `null`, matching the API contract.
+- **Pagination** — List/Grid `pagination.hasMore` and `pagination.onLoadMore` request the next page
+  near the bottom of the native scroll view. The request uses the current laid-out page and fires
+  once per page; loading, exhaustion and unchanged empty responses cannot spin repeated requests.
+  Appending preserves row identities and selection. New queries/categories own a fresh request.
 - **Search-bar dropdown** — `List.Dropdown` and `Grid.Dropdown` draw as
   `ExtensionSearchAccessoryButton` at the header's trailing edge and drop `ExtensionPickerList` as one
   of the palette's `OpenMenu` cases, so the arrows, ↵, Escape and the click-away come from the one menu

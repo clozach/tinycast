@@ -193,6 +193,7 @@ struct ExtensionTests {
         await ExtensionSendToTests.run()
         await bundledModuleChecks()
         await navigationSearchRuntimeChecks()
+        await paginationRuntimeChecks()
         await searchAccessoryRuntimeChecks()
         await nodeContractChecks()
         await bufferEventChecks()
@@ -1654,6 +1655,50 @@ struct ExtensionTests {
             recorder.failures.joined(separator: "|"))
         await runtime.stop(session: "archive")
         runtime.shutdown()
+    }
+
+    @MainActor
+    static func paginationRuntimeChecks() async {
+        for component in ["Grid", "List"] {
+            let (runtime, _, recorder) = makeRuntime()
+            try? await runtime.boot(
+                config: .current(supportDirectory: FileManager.default.temporaryDirectory))
+            let command = """
+                const React = require("react"), { \(component): Surface } = require("@raycast/api");
+                module.exports.default = () => {
+                  const [count, setCount] = React.useState(100);
+                  return React.createElement(Surface, {
+                    filtering: false, pagination: { hasMore: count < 300,
+                      onLoadMore: () => setCount(n => Math.min(n + 100, 300)) }
+                  }, Array.from({length: count}, (_, i) =>
+                    React.createElement(Surface.Item, {key:i, id:String(i), title:String(i)})));
+                };
+                """
+            await runtime.start(session: "pagination", code: command,
+                file: URL(fileURLWithPath: "/tmp/pagination.js"), mode: .view,
+                context: launchContext())
+            await settle()
+            for expected in [100, 200] {
+                guard let tree = recorder.trees.last else {
+                    check("pagination renders \(component)", false); break
+                }
+                let screen = ExtensionScreen(tree: tree, query: "")
+                check("\(component) pagination batch \(expected)", screen.items.count == expected)
+                guard let handler = screen.paginationHandler else {
+                    check("nested pagination callback crosses runtime", false); break
+                }
+                await runtime.dispatch(session: "pagination", handler: handler, payload: "[]")
+                await settle()
+            }
+            if let tree = recorder.trees.last {
+                let screen = ExtensionScreen(tree: tree, query: "")
+                check("\(component) pagination completes", screen.items.count == 300)
+                check("\(component) exhausted pagination stops", screen.paginationHandler == nil)
+            }
+            check("pagination runtime reports no failures", recorder.failures.isEmpty)
+            await runtime.stop(session: "pagination")
+            runtime.shutdown()
+        }
     }
 
     @MainActor
