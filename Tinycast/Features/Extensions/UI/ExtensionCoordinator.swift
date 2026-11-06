@@ -30,7 +30,7 @@ final class ExtensionCoordinator {
 
     // MARK: - Feature presence
 
-    static let glyphPickerID = "extension:unimagic/unimagic"
+    static let glyphPickerID = GlyphPickerShortcut.entryID
 
     /// Applies both switches as they stand — on launch, and after a backup import moves them.
     func applyEnabled() {
@@ -76,7 +76,7 @@ final class ExtensionCoordinator {
         guard settings.extensionsEnabled,
             let entry = extensions.launcherEntry(forEntryID: entryID)
         else { return }
-        if entryID == Self.glyphPickerID, forwardToFocusedStandalonePicker() { return }
+        if entryID == Self.glyphPickerID, GlyphPickerShortcut.forwardToFocusedStandalonePicker() { return }
         // Honor a fast repeat even before JavaScript has finished loading the first screen.
         if paletteCoordinator.isShowing(.extensionCommand), palette.untouchedCommandShortcut == entryID {
             paletteCoordinator.hidePalette()
@@ -116,22 +116,6 @@ final class ExtensionCoordinator {
         else { return false }
         extensions.dispatch(handler: handler)
         return true
-    }
-
-    /// Tinycast can own the global shortcut while the user is choosing in the separate app.
-    /// Ask its key panel directly; a hidden or absent helper leaves this invocation here.
-    private func forwardToFocusedStandalonePicker() -> Bool {
-        let helperID = "com.clozach.unimagic.mac.picker"
-        guard Bundle.main.bundleIdentifier != helperID,
-            !NSRunningApplication.runningApplications(withBundleIdentifier: helperID).isEmpty,
-            let port = CFMessagePortCreateRemote(nil, "\(helperID).invoke" as CFString)
-        else { return false }
-        var reply: Unmanaged<CFData>?
-        let result = CFMessagePortSendRequest(
-            port, 1, Data("invoke".utf8) as CFData, 0.15, 0.25,
-            CFRunLoopMode.defaultMode.rawValue, &reply)
-        let data = reply?.takeRetainedValue() as Data?
-        return result == kCFMessagePortSuccess && data == Data("1".utf8)
     }
 
     /// The search text of each screen beneath the one showing, as Raycast keeps one per screen.

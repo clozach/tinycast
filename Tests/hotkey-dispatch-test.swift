@@ -15,8 +15,40 @@ struct HotKeyDispatchTest {
     static func main() {
         for includesShift in [false, true] { dispatch(includesShift: includesShift) }
         heldGestureHooks()
+        glyphShortcutTransfers()
         print("\(checks) dispatch checks; \(failures) failures")
         if failures > 0 { exit(1) }
+    }
+
+    static func glyphShortcutTransfers() {
+        let domain = scratchSuiteName("glyph-shortcut-transfer")
+        let defaults = UserDefaults(suiteName: domain)!
+        defer { discardSuite(domain, defaults) }
+        let action = HotKeyAction.extensionCommand(entryID: GlyphPickerShortcut.entryID)
+        let shared = HotKeyBinding.combo(GlyphPickerShortcut.shortcut)
+        let alternate = HotKeyBinding.combo(KeyShortcut(carbonKeyCode: kVK_ANSI_G, carbonModifiers: cmdKey))
+        var manager = HotKeyManager(defaults: defaults)
+        var events: [GlyphPickerShortcut.OwnershipChange] = []
+        let observe: @MainActor (GlyphPickerShortcut.OwnershipChange) -> Void = { change in
+            events.append(change)
+            check("handover happens while Tinycast has released its old registration",
+                HotKeyCenter.current?.entries[action.defaultsKey] == nil)
+            let raw = defaults.string(forKey: action.defaultsKey).map { Data($0.utf8) }
+            let stored = raw.flatMap { try? JSONDecoder().decode(HotKeyBinding.self, from: $0) }
+            check("peer sees the new preference before the request", (stored == shared) == (change == .release))
+        }
+        manager.transferGlyphShortcut = observe
+        manager.setBinding(shared, for: action)
+        manager.setBinding(alternate, for: action)
+        manager.setBinding(nil, for: action)
+        manager.setBinding(shared, for: .extensionCommand(entryID: "extension:other/main"))
+        check("only the shared UniMagic chord transfers", events == [.release, .recheck])
+        manager.setBinding(shared, for: action)
+        manager = HotKeyManager(defaults: defaults)
+        manager.transferGlyphShortcut = observe
+        manager.start(customCommandIDs: [], quicklinkIDs: [], windowLayoutIDs: [], windowRoomIDs: [],
+            customWindowSizeIDs: [], quickActionIDs: [])
+        check("a fresh launch reacquires the saved shared chord", events == [.release, .recheck, .release, .release])
     }
 
     static func heldGestureHooks() {

@@ -6,6 +6,7 @@ import Foundation
 final class HotKeyManager {
     var onTogglePalette: (() -> Void)?
     var beforePerform: ((HotKeyAction) -> Bool)?
+    var transferGlyphShortcut: @MainActor (GlyphPickerShortcut.OwnershipChange) -> Void = GlyphPickerShortcut.notifyController
     var afterPerform: ((HotKeyAction) -> Void)?
     var onRelease: ((HotKeyAction) -> Void)?
     var onDictationPressed: (() -> Void)?
@@ -209,6 +210,12 @@ final class HotKeyManager {
         revision &+= 1
         // Unregister unconditionally: the previous binding may have been a combo.
         center.unregister(id: action.defaultsKey)
+        if action == .extensionCommand(entryID: GlyphPickerShortcut.entryID),
+            previous?.shortcut == GlyphPickerShortcut.shortcut, binding?.shortcut != GlyphPickerShortcut.shortcut
+        {
+            defaults.synchronize()
+            transferGlyphShortcut(.recheck)
+        }
         register(action)
 
         switch action {
@@ -398,6 +405,11 @@ final class HotKeyManager {
     /// Hands a combo to Carbon; a modifier-only binding has no per-action registration.
     private func register(_ action: HotKeyAction) {
         guard let shortcut = binding(for: action)?.shortcut else { return }
+        if action == .extensionCommand(entryID: GlyphPickerShortcut.entryID), shortcut == GlyphPickerShortcut.shortcut {
+            // The peer confirms this binding from our defaults before relinquishing its registration.
+            defaults.synchronize()
+            transferGlyphShortcut(.release)
+        }
         center.register(
             id: action.defaultsKey, shortcut: shortcut,
             onKeyDown: { [weak self] _ in self?.perform(action) },

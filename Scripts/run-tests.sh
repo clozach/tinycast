@@ -666,6 +666,7 @@ run hotkey-dispatch-test   Tinycast/Features/HotKeys/Model/DoubleTapModifier.swi
                            Tinycast/Features/HotKeys/Model/HotKeyAction.swift \
                            Tinycast/Features/HotKeys/Service/KeyShortcut.swift \
                            Tinycast/Features/HotKeys/Service/HotKeyManager.swift \
+                           Tinycast/Features/HotKeys/Service/GlyphPickerShortcut.swift \
                            Tinycast/Platform/ASCIIKeyboardLayout.swift \
                            Tests/hotkey-dispatch-fixtures.swift
 run settings-file-test     Tinycast/Features/Settings/Model/*.swift \
