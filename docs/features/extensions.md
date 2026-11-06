@@ -612,6 +612,7 @@ UniMagic reserves its own repeat, including a second Space with ⌃⌘ still hel
 without interacting and the picker closes. Move the selection, type, click or scroll, then press
 the shortcut on a tone-capable emoji to open its skin tones. Opening from launcher search also lets
 the selected item's action run. Holding Space down once counts as one invocation.
+In the focused search field, ⌘A selects its complete text. Typing replaces the selection.
 Assign or remove that chord in Tinycast Settings while both apps run. The running standalone app
 yields it when Tinycast takes it, and can reclaim it when Tinycast releases it.
 

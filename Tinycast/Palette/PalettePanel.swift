@@ -43,6 +43,22 @@ final class PalettePanel: NSPanel {
         fieldEditor?.selectAll(nil)
     }
 
+    /// A nonactivating panel's Edit menu can accept ⌘A while targeting another window.
+    private func selectAllInFocusedEditor(_ event: NSEvent) -> Bool {
+        guard event.type == .keyDown, paletteState?.menuOpen != true,
+            event.modifierFlags.intersection([.command, .option, .control, .shift, .function]) == .command,
+            (ASCIIKeyboardLayout.character(for: event) ?? event.charactersIgnoringModifiers)?.lowercased() == "a",
+            let editor = fieldEditor
+        else { return false }
+        paletteState?.untouchedCommandShortcut = nil
+        editor.selectAll(nil)
+        return true
+    }
+
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        selectAllInFocusedEditor(event) || super.performKeyEquivalent(with: event)
+    }
+
     func moveFieldEditorCaretToEnd() {
         fieldEditor?.moveToEndOfDocument(nil)
     }
@@ -186,6 +202,7 @@ final class PalettePanel: NSPanel {
     }
 
     override func sendEvent(_ event: NSEvent) {
+        if selectAllInFocusedEditor(event) { return }
         switch event.type {
         case .keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown, .scrollWheel:
             paletteState?.untouchedCommandShortcut = nil
