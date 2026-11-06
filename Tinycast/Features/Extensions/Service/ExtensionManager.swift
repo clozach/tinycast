@@ -843,7 +843,7 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
             coordinator?.showExtensionSearch(search, tree: tree)
         }
         state = .rendered(tree)
-        navigate(to: tree.depth)
+        navigationDepth = tree.depth
         seedSearchBarAccessory(in: tree)
     }
 
@@ -859,14 +859,7 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
 
     func runtime(_ runtime: ExtensionRuntime, session: String, navigationDepth depth: Int) {
         guard session == sessionID else { return }
-        navigate(to: depth)
-    }
-
-    /// A push or pop inside the running command; the coordinator gives each screen its own search.
-    private func navigate(to depth: Int) {
-        let previous = navigationDepth
         navigationDepth = depth
-        if depth != previous { coordinator?.extensionNavigated(to: depth) }
     }
 
     func runtime(_ runtime: ExtensionRuntime, session: String, didFinish: Void) {
