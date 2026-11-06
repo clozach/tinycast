@@ -11,6 +11,12 @@ struct AppSwitchTests {
     }
 
     static func main() {
+        var picker = AppSwitchGesture()
+        picker.begin(.init(keyCode: 49, modifiers: 1, shift: 2, commandOwnsRepeat: true))
+        expect(picker.press(keyCode: 49, modifiers: 1) == .repeatPress, "holding Space only invokes the picker once")
+        picker.keyReleased()
+        expect(picker.press(keyCode: 49, modifiers: 1) == .ignored, "another Space goes to the open picker")
+        expect(picker.state == .idle, "the reserved repeat cannot enter the application switcher")
         let apps = (1...5).map { AppSwitchEntry(id: Int32($0), name: "App \($0)", bundlePath: nil) }
         let ordered = AppSwitchOrder.sorted(apps.reversed(), recentIDs: [1, 2, 3, 4, 5], initialID: 1)
         expect(ordered.map(\.id) == [2, 1, 3, 4, 5], "recency with only the head pair flipped")

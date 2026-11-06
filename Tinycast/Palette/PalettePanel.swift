@@ -186,6 +186,11 @@ final class PalettePanel: NSPanel {
     }
 
     override func sendEvent(_ event: NSEvent) {
+        switch event.type {
+        case .keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown, .scrollWheel:
+            paletteState?.untouchedCommandShortcut = nil
+        default: break
+        }
         if consumeMenuDismissal(event) { return }
         if event.type == .scrollWheel, paletteState?.mode.isNativeEditor == true {
             onDismissMenu?()

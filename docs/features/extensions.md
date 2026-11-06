@@ -600,13 +600,18 @@ root search with text typed, the command opens already searching that text — t
 `fallbackText` a deeplink carries — and Escape walks back to the root search with the text intact. Pressed again
 while its command is showing, the shortcut closes it — unless the selected item has an action whose
 own `shortcut` is that same chord, which then runs instead. A global chord never reaches the
-palette's key handlers, so this is how a command reuses its own hotkey (Unimagic opens its skin-tone
-picker on a second ⌃⌘Space); `ExtensionCoordinator.dispatchOwnChord` does the matching. The chord's key may be a
+palette's key handlers, so this is how a command reuses its own hotkey.
+`ExtensionCoordinator.dispatchOwnChord` does the matching. The chord's key may be a
 named key (⎋ ↩ ⇥ space ⌫ arrows) as well as a character: `ASCIIKeyboardLayout.keyEquivalent(forKeyCode:)`.
 
 That command action uses a fresh invocation. After a chord opens the hidden palette, repeating its
 trigger with the modifiers continuously held enters the [application switcher](app-switcher.md) first.
 Release the modifiers between invocations to retain the command's normal second-invocation action.
+
+UniMagic reserves its own repeat, including a second Space with ⌃⌘ still held. Invoke it twice
+without interacting and the picker closes. Move the selection, type, click or scroll, then press
+the shortcut on a tone-capable emoji to open its skin tones. Opening from launcher search also lets
+the selected item's action run. Holding Space down once counts as one invocation.
 
 Its index is not pruned at launch the way the UUID-keyed ones are: the installed set is scanned
 asynchronously and only while extensions are on, so at launch "not installed yet" and "gone" look

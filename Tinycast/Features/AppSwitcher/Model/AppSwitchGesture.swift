@@ -5,6 +5,7 @@ struct AppSwitchGesture: Equatable, Sendable {
         let keyCode: Int
         let modifiers: UInt64
         let shift: UInt64
+        var commandOwnsRepeat = false
 
         func matches(keyCode: Int, modifiers: UInt64) -> Bool {
             self.keyCode == keyCode && (modifiers == self.modifiers || modifiers == self.modifiers | shift)
@@ -51,6 +52,10 @@ struct AppSwitchGesture: Equatable, Sendable {
         case .armed(_, .down), .switching(_, .down): return .repeatPress
         case .armed(_, .up):
             guard !isRepeat else { return .repeatPress }
+            if trigger.commandOwnsRepeat {
+                cancel()
+                return .ignored
+            }
             state = .switching(trigger, .down)
             return .enter
         case .switching(_, .up):

@@ -54,7 +54,8 @@ final class AppSwitchCoordinator {
         gesture.begin(.init(
             keyCode: shortcut.carbonKeyCode,
             modifiers: UInt64(shortcut.modifierFlags.intersection(Self.modifiers).rawValue),
-            shift: UInt64(NSEvent.ModifierFlags.shift.rawValue)))
+            shift: UInt64(NSEvent.ModifierFlags.shift.rawValue),
+            commandOwnsRepeat: action == .extensionCommand(entryID: ExtensionCoordinator.glyphPickerID)))
         watchRelease()
     }
 

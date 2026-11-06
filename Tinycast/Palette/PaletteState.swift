@@ -17,6 +17,8 @@ final class PaletteState {
     var restoredSelection: Int? { restoredFrame?.selection }
     var selection: Int = 0
     @ObservationIgnored private var restoredFrame: PaletteFrame?
+    /// The command that can be dismissed by its invoking shortcut before the first user input.
+    @ObservationIgnored var untouchedCommandShortcut: String?
     var restoresSelection: Bool {
         restoredFrame == PaletteFrame(mode: mode, query: query, selection: selection)
     }
@@ -88,7 +90,10 @@ final class PaletteState {
 
     func noteVisible(_ visible: Bool) {
         isVisible = visible
-        if !visible { fileSearchQuickLook = false }
+        if !visible {
+            fileSearchQuickLook = false
+            untouchedCommandShortcut = nil
+        }
     }
 
     var canGoBack: Bool { !backStack.isEmpty }
@@ -141,6 +146,7 @@ final class PaletteState {
     }
 
     private func openScreen(_ mode: PaletteMode) {
+        untouchedCommandShortcut = nil
         self.mode = mode
         query = ""
         selection = 0
@@ -233,6 +239,7 @@ final class PaletteState {
             return
         }
         hoverHighlightArmed = true
+        untouchedCommandShortcut = nil
     }
 
     /// Movement is measured from where the pointer stands now: drift is not a new choice.

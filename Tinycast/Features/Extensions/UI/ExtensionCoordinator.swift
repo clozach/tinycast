@@ -30,6 +30,8 @@ final class ExtensionCoordinator {
 
     // MARK: - Feature presence
 
+    static let glyphPickerID = "extension:unimagic/unimagic"
+
     /// Applies both switches as they stand — on launch, and after a backup import moves them.
     func applyEnabled() {
         extensions.setShowsInLauncher(settings.extensionsShowInLauncher)
@@ -74,6 +76,12 @@ final class ExtensionCoordinator {
         guard settings.extensionsEnabled,
             let entry = extensions.launcherEntry(forEntryID: entryID)
         else { return }
+        if entryID == Self.glyphPickerID, forwardToFocusedStandalonePicker() { return }
+        // Honor a fast repeat even before JavaScript has finished loading the first screen.
+        if paletteCoordinator.isShowing(.extensionCommand), palette.untouchedCommandShortcut == entryID {
+            paletteCoordinator.hidePalette()
+            return
+        }
         // The shortcut's second press closes its command, as a mode command's does.
         if paletteCoordinator.isShowing(.extensionCommand),
             extensions.running == ExtensionCommandRef(entryID: entryID)
@@ -85,6 +93,7 @@ final class ExtensionCoordinator {
         // Over a root search with text typed, the command opens already searching that text.
         let typed = paletteCoordinator.isShowing(.launcher) && !palette.query.isEmpty ? palette.query : nil
         runExtensionCommand(entry, fallbackText: typed)
+        if entryID == Self.glyphPickerID { palette.untouchedCommandShortcut = entryID }
     }
 
     /// An action the open screen binds to the command's own chord takes that second press instead.
@@ -109,6 +118,22 @@ final class ExtensionCoordinator {
         return true
     }
 
+    /// Tinycast can own the global shortcut while the user is choosing in the separate app.
+    /// Ask its key panel directly; a hidden or absent helper leaves this invocation here.
+    private func forwardToFocusedStandalonePicker() -> Bool {
+        let helperID = "com.clozach.unimagic.mac.picker"
+        guard Bundle.main.bundleIdentifier != helperID,
+            !NSRunningApplication.runningApplications(withBundleIdentifier: helperID).isEmpty,
+            let port = CFMessagePortCreateRemote(nil, "\(helperID).invoke" as CFString)
+        else { return false }
+        var reply: Unmanaged<CFData>?
+        let result = CFMessagePortSendRequest(
+            port, 1, Data("invoke".utf8) as CFData, 0.15, 0.25,
+            CFRunLoopMode.defaultMode.rawValue, &reply)
+        let data = reply?.takeRetainedValue() as Data?
+        return result == kCFMessagePortSuccess && data == Data("1".utf8)
+    }
+
     /// The search text of each screen beneath the one showing, as Raycast keeps one per screen.
     private var parentQueries: [String] = []
 
@@ -126,7 +151,7 @@ final class ExtensionCoordinator {
     }
 
     /// Al's own glyph picker, projects/unimagic in his vault; nil unless that extension is installed.
-    var glyphSearchEntry: AppEntry? { extensions.launcherEntry(forEntryID: "extension:unimagic/unimagic") }
+    var glyphSearchEntry: AppEntry? { extensions.launcherEntry(forEntryID: Self.glyphPickerID) }
 
     /// Hands a root-search query to the glyph picker, which opens already searching it.
     func searchGlyphs(_ query: String) {

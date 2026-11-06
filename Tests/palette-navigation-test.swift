@@ -26,6 +26,21 @@ struct PaletteNavigationTests {
     }
 
     static func main() {
+        let picker = PaletteState()
+        picker.prepare(mode: .extensionCommand)
+        picker.disarmHoverHighlight(pointerAt: rest)
+        picker.untouchedCommandShortcut = "glyphs"
+        picker.notePointerMoved(to: rest)
+        expect(picker.untouchedCommandShortcut == "glyphs", "appearance under the pointer leaves repeat dismissal armed")
+        picker.notePointerMoved(to: CGPoint(x: rest.x + 25, y: rest.y))
+        expect(picker.untouchedCommandShortcut == nil, "intentional hover allows the selected item's shortcut")
+        picker.untouchedCommandShortcut = "glyphs"
+        picker.noteVisible(false)
+        expect(picker.untouchedCommandShortcut == nil, "hiding drops the previous shortcut invocation")
+        picker.untouchedCommandShortcut = "glyphs"
+        picker.prepare(mode: .extensionCommand)
+        expect(picker.untouchedCommandShortcut == nil, "launching through the command catalog starts independently")
+
         openingDisarmed()
         deliberateMovementArms()
         scrollingDisarms()
